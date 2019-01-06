@@ -6,7 +6,6 @@ import "./App.css";
 
 class App extends Component {
   state = { 
-    storageValue: 0, 
     web3: null, 
     accounts: null, 
     contract: null 
@@ -18,6 +17,7 @@ class App extends Component {
       const web3 = await getWeb3();
 
       // Use web3 to get the user's accounts.
+      // We'll need this to make a call to the contract
       const accounts = await web3.eth.getAccounts();
 
       // Get the contract instance.
@@ -33,7 +33,6 @@ class App extends Component {
       this.setState({ web3, accounts, contract: instance });
       
     } catch (error) {
-      // Catch any errors for any of the above operations.
       alert(
         `Failed to load web3, accounts, or contract. Check console for details.`,
       );
@@ -49,8 +48,12 @@ class App extends Component {
       <div className="App">
         <h1>Good to Go!</h1>
         <p>Contract address: {this.state.contract._address}</p>
-        <ValueToStoreForm contract={this.state.contract} account={this.state.accounts[0]} />
-        <div>The stored value is: {this.state.storageValue}</div>
+        <ValueToStoreForm 
+          contract={this.state.contract} 
+          account={this.state.accounts[0]} />
+        <GetStoredValue
+          contract={this.state.contract} 
+          account={this.state.accounts[0]} />        
       </div>
     );
   }
@@ -90,8 +93,36 @@ class ValueToStoreForm extends React.Component {
           uint to store:
           <input id="to_store" name="to_store" type="text" ref={this.input} />
         </label>
-        <input type="submit" value="Submit" />
+        <input type="submit" value="Set it!" />
       </form>
+    );
+  }
+}
+
+class GetStoredValue extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleGet = this.handleGet.bind(this);
+    this.state = {
+      stored_value: null,
+      contract: this.props.contract,
+      account: this.props.account,
+    }
+  }
+
+  handleGet = async (event) => {
+    // event.preventDefault();
+    const { account, contract } = this.state;
+    const response = await contract.methods.get().call();
+    this.setState({ stored_value: response });
+  }
+
+  render() {
+    return (
+      <p>
+        <button type="submit" onClick={this.handleGet}>Get it!</button>
+        Stored value: {this.state.stored_value}
+      </p>
     );
   }
 }
