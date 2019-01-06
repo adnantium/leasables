@@ -44,13 +44,23 @@ class App extends Component {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
+    let contract_status;
+    if (!this.state.contract._address) {
+      contract_status = <p>Contract is not deployed!</p>
+    } else {
+      contract_status = <p>Contract deployed at: {this.state.contract._address}</p>
+    }
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Contract address: {this.state.contract._address}</p>
+        <h1>SimpleStorage.sol Demo</h1>
+        <hr/>
+        {contract_status}
+        <p>Web3 provider: {this.state.web3.currentProvider.host}</p>
+        <hr/>
         <ValueToStoreForm 
           contract={this.state.contract} 
           account={this.state.accounts[0]} />
+        <hr/>
         <GetStoredValue
           contract={this.state.contract} 
           account={this.state.accounts[0]} />        
@@ -69,6 +79,10 @@ class ValueToStoreForm extends React.Component {
     this.state = {
       contract: this.props.contract,
       account: this.props.account,
+      transactionHash: "nothing yet",
+      blockHash: "nothing yet",
+      blockNumber: "nothing yet",
+      gasUsed: "nothing yet",
     }
   }
 
@@ -80,21 +94,31 @@ class ValueToStoreForm extends React.Component {
     var to_store = this.input.current.value;
     console.log("data: " + to_store);
 
-    await contract.methods.set(to_store).send({ from: account });
-    const response = await contract.methods.get().call();
+    const set_response = await contract.methods.set(to_store).send({ from: account });
 
-    this.setState({ storageValue: response });
+    this.setState({ 
+      transactionHash: set_response.transactionHash,
+      blockHash: set_response.blockHash,
+      blockNumber: set_response.blockNumber,
+      gasUsed: set_response.gasUsed,
+     });
   }
 
   render() {
     return (
-      <form onSubmit={this.handleSubmit}>
-        <label>
-          uint to store:
-          <input id="to_store" name="to_store" type="text" ref={this.input} />
-        </label>
-        <input type="submit" value="Set it!" />
-      </form>
+      <div>
+        <form onSubmit={this.handleSubmit}>
+          <label>
+            uint to store:
+            <input id="to_store" name="to_store" type="text" ref={this.input} />
+          </label>
+          <input type="submit" value="Set it!" />
+        </form>
+        <p>transactionHash: {this.state.transactionHash}</p>
+        <p>blockHash: {this.state.blockHash}</p>
+        <p>blockNumber: {this.state.blockNumber}</p>
+        <p>gasUsed: {this.state.gasUsed}</p>
+      </div>
     );
   }
 }
@@ -112,8 +136,9 @@ class GetStoredValue extends React.Component {
 
   handleGet = async (event) => {
     // event.preventDefault();
-    const { account, contract } = this.state;
+    const contract = this.state.contract;
     const response = await contract.methods.get().call();
+    console.log("got: " + response);
     this.setState({ stored_value: response });
   }
 
