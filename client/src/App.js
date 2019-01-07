@@ -70,28 +70,45 @@ class App extends Component {
     }
 
     return (
-      <div className="App">
-        <h1>SimpleStorage.sol Demo</h1>
+      <div class="container">
+        <div class="row">
+          <div class="col-xs-12 col-sm-8 col-sm-push-2">
+            <h1 class="text-center">SimpleStorage.sol Demo</h1>
+            <hr/>
+            <br/>
+          </div>
+        </div>
 
-        {contract_status}
-        <p>Web3 provider: {this.state.web3.currentProvider.host}</p>
-        <hr/>
 
-        <LookupCarForm
-          car_contract_spec={this.state.car_contract_spec} 
-          account={this.state.accounts[0]} />
-        <hr/>
+        <div id="simple_storage_box" class="row">
+        <div class="col-sm-6 col-sm-push-3 col-md-4 col-md-push-4">
+          <div class="panel panel-default">
+          
+            <div class="panel-body">
+              <h3 class="panel-title">SimpleStorage</h3>
+              {contract_status}
+              <p>Web3 provider: {this.state.web3.currentProvider.host}</p>
+              <hr/>
 
-        <ValueToStoreForm 
-          storage_contract={this.state.storage_contract} 
-          account={this.state.accounts[0]} />
-        <hr/>
+              <ValueToStoreForm 
+                storage_contract={this.state.storage_contract} 
+                account={this.state.accounts[0]} />
+              <hr/>
 
-        <GetStoredValue
-          storage_contract={this.state.storage_contract} 
-          account={this.state.accounts[0]} />    
+              <GetStoredValue
+                storage_contract={this.state.storage_contract} 
+                account={this.state.accounts[0]} />    
 
+              <LookupCarForm
+                  car_contract_spec={this.state.car_contract_spec} 
+                  account={this.state.accounts[0]} />
+                <hr/>
+            </div>
+
+          </div>
+        </div>
       </div>
+    </div>
     );
   }
 }
@@ -135,16 +152,15 @@ class ValueToStoreForm extends React.Component {
     return (
       <div>
         <form onSubmit={this.handleSubmit}>
-          <label>
-            uint to store:
-            <input id="to_store" name="to_store" type="text" ref={this.input} />
-          </label>
-          <input type="submit" value="Set it!" />
+            <input id="to_store" name="to_store" type="text" class="form-control" placeholder="a uint to store" ref={this.input} />
+            <button class="btn btn-primary btn-sm" type="submit">Set it!</button>
         </form>
-        <p>transactionHash: {this.state.transactionHash}</p>
-        <p>blockHash: {this.state.blockHash}</p>
-        <p>blockNumber: {this.state.blockNumber}</p>
-        <p>gasUsed: {this.state.gasUsed}</p>
+        <ul>
+          <li>transactionHash: {this.state.transactionHash}</li>
+          <li>blockHash: {this.state.blockHash}</li>
+          <li>blockNumber: {this.state.blockNumber}</li>
+          <li>gasUsed: {this.state.gasUsed}</li>
+        </ul>
       </div>
     );
   }
@@ -173,7 +189,7 @@ class GetStoredValue extends React.Component {
   render() {
     return (
       <p>
-        <button type="submit" onClick={this.handleGet}>Get it!</button>
+        <button type="submit" onClick={this.handleGet} class="btn btn-primary btn-sm">Get it!</button>
         Stored value: {this.state.stored_value}
       </p>
     );
