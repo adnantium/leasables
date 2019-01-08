@@ -5,6 +5,8 @@ import getWeb3 from "./utils/getWeb3";
 
 import "./App.css";
 
+var truffle_contract = require("truffle-contract");
+
 class App extends Component {
   state = { 
     web3: null, 
@@ -23,28 +25,15 @@ class App extends Component {
       // We'll need this to make a call to the contract
       const accounts = await web3.eth.getAccounts();
 
-      // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
+      var storage_contract_spec = truffle_contract(SimpleStorageContract);
+      storage_contract_spec.setProvider(web3.currentProvider);
+      var storage_contract = await storage_contract_spec.deployed();
 
-      let deployedNetwork;
-
-      // SimpleStorage contract is already deployed at an address.
-      // Need to lookup that address in the json interface object
-      // Will need that along with the contract's ABI to
-      // get a usable contract object that we can interact with
-      deployedNetwork = SimpleStorageContract.networks[networkId];
-      const storage_contract = new web3.eth.Contract(
-        SimpleStorageContract.abi,
-        deployedNetwork && deployedNetwork.address,
-      );
-
-      // Not deplloyed to a network
-      // deployedNetwork = LeasableCarContract.networks[networkId];
-      const car_contract_spec = new web3.eth.Contract(
-        LeasableCarContract.abi,
-        // deployedNetwork && deployedNetwork.address,
-      );
-
+      // We're just going the store the 'spec' of the contract. It not a
+      // particular instance of a deployed contract. Need the address to do that
+      var car_contract_spec = truffle_contract(LeasableCarContract);
+      car_contract_spec.setProvider(web3.currentProvider);
+      
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
       this.setState({ web3, accounts, storage_contract, car_contract_spec });
@@ -73,12 +62,11 @@ class App extends Component {
       <div class="container">
         <div class="row">
           <div class="col-xs-12 col-sm-8 col-sm-push-2">
-            <h1 class="text-center">SimpleStorage.sol Demo</h1>
+            <h1>SimpleStorage.sol Demo</h1>
             <hr/>
             <br/>
           </div>
         </div>
-
 
         <div id="simple_storage_box" class="row">
         <div class="col-sm-6 col-sm-push-3 col-md-4 col-md-push-4">
@@ -102,7 +90,7 @@ class App extends Component {
               <LookupCarForm
                   car_contract_spec={this.state.car_contract_spec} 
                   account={this.state.accounts[0]} />
-                <hr/>
+              <hr/>
             </div>
 
           </div>
@@ -138,13 +126,13 @@ class ValueToStoreForm extends React.Component {
     var to_store = this.input.current.value;
     console.log("data: " + to_store);
 
-    const set_response = await storage_contract.methods.set(to_store).send({ from: account });
+    const set_response = await storage_contract.setInt(to_store, { from: account });
 
     this.setState({ 
-      transactionHash: set_response.transactionHash,
-      blockHash: set_response.blockHash,
-      blockNumber: set_response.blockNumber,
-      gasUsed: set_response.gasUsed,
+      transactionHash: set_response.tx,
+      blockHash: set_response.receipt.blockHash,
+      blockNumber: set_response.receipt.blockNumber,
+      gasUsed: set_response.receipt.gasUsed,
      });
   }
 
@@ -176,14 +164,12 @@ class GetStoredValue extends React.Component {
     }
   }
 
-  handleGet = async (event) => {
-
-    
-    // event.preventDefault();
+  handleGet = async (event) => {    
+    event.preventDefault();
     const storage_contract = this.state.storage_contract;
-    const response = await storage_contract.methods.get().call();
-    console.log("got: " + response);
-    this.setState({ stored_value: response });
+    const response = await storage_contract.getInt.call();
+    console.log("got: " + response.toNumber());
+    this.setState({ stored_value: response.toNumber() });
   }
 
   render() {
@@ -210,23 +196,19 @@ class LookupCarForm extends React.Component {
   handleSubmit = async (event) => {
     event.preventDefault();
 
-    const { account, car_contract_spec } = this.state;
-
     var car_address = this.input.current.value;
-    console.log("car_address: " + car_address);
-
-    let car_contract = car_contract_spec.clone();
-    car_contract.options.address = car_address;
-    let car_vin = await car_contract.methods.VIN().call();
+    
+    let car_contract = await this.state.car_contract_spec.at(car_address);
+    let car_vin = await car_contract.VIN.call();
 
     this.setState({ 
-      car_contract: car_contract,
+      car_contract,
       car_vin,
      });
   }
 
   render() {
-    let car_address = this.state.car_contract ? this.state.car_contract._address : "";
+    let car_address = this.state.car_contract ? this.state.car_contract.address : "";
     return (
       <div>
         <form onSubmit={this.handleSubmit}>
