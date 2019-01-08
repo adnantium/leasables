@@ -4,8 +4,6 @@ import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseContract from "./contracts/LeaseContract.json";
 import getWeb3 from "./utils/getWeb3";
 
-import "./App.css";
-
 var truffle_contract = require("truffle-contract");
 
 class App extends Component {
@@ -70,45 +68,44 @@ class App extends Component {
 
     return (
       <div class="container">
+
         <div class="row">
-          <div class="col-xs-12 col-sm-8 col-sm-push-2">
-            <h1>SimpleStorage.sol Demo</h1>
-            <hr/>
-            <br/>
+          <div class="col">
+            <h2>Leaser</h2>
+            <LookupCarForm
+              car_contract_spec={this.state.car_contract_spec} 
+              lease_contract_spec={this.state.lease_contract_spec} 
+              account={this.state.accounts[0]} />
           </div>
         </div>
 
-        <div id="simple_storage_box" class="row">
-        <div class="col-sm-6 col-sm-push-3 col-md-4 col-md-push-4">
-          <div class="panel panel-default">
+      
+        <div class="row">
+          <div class="col">
 
-            <div class="panel-body">
-              <h3 class="panel-title">SimpleStorage</h3>
-              <ul>
-                {contract_status}
-                <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
-              </ul>
-              <hr/>
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">SimpleStorage.sol Demo</h3>
+              </div>
+              <div class="panel-body">
+                <ul>
+                  {contract_status}
+                  <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
+                </ul>
 
-              <ValueToStoreForm 
-                storage_contract={this.state.storage_contract} 
-                account={this.state.accounts[0]} />
-              <hr/>
-
-              <GetStoredValue
-                storage_contract={this.state.storage_contract} 
-                account={this.state.accounts[0]} />    
-
-              <LookupCarForm
-                  car_contract_spec={this.state.car_contract_spec} 
-                  lease_contract_spec={this.state.lease_contract_spec} 
+                <ValueToStoreForm 
+                  storage_contract={this.state.storage_contract} 
                   account={this.state.accounts[0]} />
-              <hr/>
-            </div>
+                <hr/>
 
+                <GetStoredValue
+                  storage_contract={this.state.storage_contract} 
+                  account={this.state.accounts[0]} />    
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+
     </div>
     );
   }
