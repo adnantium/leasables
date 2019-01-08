@@ -1,4 +1,7 @@
 import React, { Component } from "react";
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import "react-tabs/style/react-tabs.css";
+
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseContract from "./contracts/LeaseContract.json";
@@ -68,7 +71,13 @@ class App extends Component {
 
     return (
       <div class="container">
+      <Tabs>
+        <TabList>
+          <Tab>Leaser</Tab>
+          <Tab>SimpleStorage</Tab>
+        </TabList>
 
+        <TabPanel>
         <div class="row">
           <div class="col-sm-6">
             <h2>Leaser</h2>
@@ -78,8 +87,9 @@ class App extends Component {
               account={this.state.accounts[0]} />
           </div>
         </div>
+        </TabPanel>
 
-      
+        <TabPanel>
         <div class="row">
           <div class="col-sm-6">
 
@@ -94,19 +104,17 @@ class App extends Component {
                 </p>
               </div>
             </div>
-
             <ValueToStoreForm 
               storage_contract={this.state.storage_contract} 
               account={this.state.accounts[0]} />
-
-
             <GetStoredValue
               storage_contract={this.state.storage_contract} 
               account={this.state.accounts[0]} />    
-
           </div>
         </div>
-    </div>
+      </TabPanel>
+      </Tabs>
+      </div>
     );
   }
 }
