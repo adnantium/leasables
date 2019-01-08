@@ -1,9 +1,9 @@
 pragma solidity >=0.4.24 <0.6.0;
 
 
-contract LeaseContract {
+contract LeaseAgreement {
 
-    enum LeaseContractStates {
+    enum LeaseAgreementStates {
         Draft,
         Created,
         PartiallySigned,
@@ -19,7 +19,7 @@ contract LeaseContract {
     address public the_driver;
     address public contract_creator;
 
-    LeaseContractStates public contract_state = LeaseContractStates.Draft;
+    LeaseAgreementStates public contract_state = LeaseAgreementStates.Draft;
     uint public start_timestamp = 0;
     uint public end_timestamp = 0;
 

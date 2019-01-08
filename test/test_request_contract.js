@@ -4,7 +4,7 @@ var assert = require('assert');
 const Web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
-var LeaseContractArtifact = artifacts.require("LeaseContract");
+var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
 
 contract('TestRequestContract', async function(accounts) {
 
@@ -49,12 +49,12 @@ contract('TestRequestContract', async function(accounts) {
 
         var tx = await test_car1.
             requestContractDraft(start_timestamp, end_timestamp, {from: acct2_uid});
-        assert.equal(tx.logs.length, 1, "New LeaseContract creation should only have 1 event!");
+        assert.equal(tx.logs.length, 1, "New LeaseAgreement creation should only have 1 event!");
         assert.ok(tx.logs[0].args, "No args in tx!");
         assert.ok(tx.logs[0].args.contractAddress, "No contractAddress in tx!");
 
         var car1_contract_uid = tx.logs[0].args.contractAddress;
-        var car1_contract = await LeaseContractArtifact.at(car1_contract_uid);
+        var car1_contract = await LeaseAgreementArtifact.at(car1_contract_uid);
 
         var start_ts;
 

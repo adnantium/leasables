@@ -1,7 +1,7 @@
 pragma solidity >=0.4.24 <0.6.0;
 
 import "./Leasable.sol";
-import "./LeaseContract.sol";
+import "./LeaseAgreement.sol";
 // import "ethereum-datetime/contracts/DateTime.sol";
 
 // Digital representation of a specific Car in the real world. Each 
@@ -30,7 +30,7 @@ contract LeasableCar is Leasable {
 
     string[] public photos;
 
-    LeaseContract[] public lease_contracts;
+    LeaseAgreement[] public lease_agreements;
 
     uint public daily_rate;
     uint public minimum_lease_days = 1;
@@ -42,8 +42,8 @@ contract LeasableCar is Leasable {
     // does not mean the car is available, just that we have a price
     // uint[] dates_priced;
 
-    event LeaseContractCreated(LeaseContract contractAddress);
-    event LeaseContractFinalized(LeaseContract contractAddress);
+    event LeaseAgreementCreated(LeaseAgreement contractAddress);
+    event LeaseAgreementFinalized(LeaseAgreement contractAddress);
 
     constructor(
             string memory _VIN,
@@ -68,8 +68,8 @@ contract LeasableCar is Leasable {
         return daily_rate;
     }
 
-    function getLeaseContracts() public view returns (LeaseContract[] memory) {
-        return lease_contracts;
+    function getLeaseAgreements() public view returns (LeaseAgreement[] memory) {
+        return lease_agreements;
     }
 
     function validate_date_format (
@@ -118,7 +118,7 @@ contract LeasableCar is Leasable {
         uint _start_timestamp,
         uint _end_timestamp)
         public
-        returns (LeaseContract lease_contract)
+        returns (LeaseAgreement lease_agreement)
     {
         address driver = msg.sender;
         address car = address(this);
@@ -132,17 +132,17 @@ contract LeasableCar is Leasable {
         require(validate_date_format(_start_timestamp), "start date is invalid!");
         require(validate_date_format(_end_timestamp), "end date is invalid!");
          
-        //  Need to look at all existing LeaseContracts for this car
-        //  Ensure the timeframe in this LeaseContract does not overlap
-        //  with any previously created LeaseContract contracts
+        //  Need to look at all existing LeaseAgreements for this car
+        //  Ensure the timeframe in this LeaseAgreement does not overlap
+        //  with any previously created LeaseAgreement contracts
         require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
 
-        LeaseContract new_leasecontract = new LeaseContract(
+        LeaseAgreement new_leaseagreement = new LeaseAgreement(
             car, driver, _start_timestamp, _end_timestamp);
-        lease_contracts.push(new_leasecontract);
+        lease_agreements.push(new_leaseagreement);
 
-        emit LeaseContractCreated(new_leasecontract);
+        emit LeaseAgreementCreated(new_leaseagreement);
 
-        return new_leasecontract;
+        return new_leaseagreement;
     }
 }
