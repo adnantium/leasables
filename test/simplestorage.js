@@ -5,10 +5,10 @@ contract("SimpleStorage", accounts => {
     const simpleStorageInstance = await SimpleStorage.deployed();
 
     // Set value of 89
-    await simpleStorageInstance.set(89, { from: accounts[0] });
+    await simpleStorageInstance.setInt(89, { from: accounts[0] });
 
     // Get stored value
-    const storedData = await simpleStorageInstance.get.call();
+    const storedData = await simpleStorageInstance.getInt.call();
 
     assert.equal(storedData, 89, "The value 89 was not stored.");
   });
