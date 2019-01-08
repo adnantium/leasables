@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import LeasableCarContract from "./contracts/LeasableCar.json";
+import LeaseContract from "./contracts/LeaseContract.json";
 import getWeb3 from "./utils/getWeb3";
 
 import "./App.css";
@@ -14,6 +15,8 @@ class App extends Component {
     storage_contract: null,
     car_contract_spec: null,
     car_contract: null,
+    lease_contract_spec: null,
+    lease_contract: null,
   };
 
   componentDidMount = async () => {
@@ -33,10 +36,17 @@ class App extends Component {
       // particular instance of a deployed contract. Need the address to do that
       var car_contract_spec = truffle_contract(LeasableCarContract);
       car_contract_spec.setProvider(web3.currentProvider);
-      
+
+      var lease_contract_spec = truffle_contract(LeaseContract);
+      lease_contract_spec.setProvider(web3.currentProvider);
+
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
-      this.setState({ web3, accounts, storage_contract, car_contract_spec });
+      this.setState({ web3, accounts, 
+        storage_contract, 
+        car_contract_spec,
+        lease_contract_spec,
+      });
       
     } catch (error) {
       alert(
@@ -52,10 +62,10 @@ class App extends Component {
     }
 
     let contract_status;
-    if (!this.state.storage_contract._address) {
-      contract_status = <p>Contract is not deployed!</p>
+    if (!this.state.storage_contract.address) {
+      contract_status = <li>Contract is not deployed!</li>
     } else {
-      contract_status = <p>Contract deployed at: {this.state.storage_contract._address}</p>
+      contract_status = <li>Contract deployed at: {this.state.storage_contract.address}</li>
     }
 
     return (
@@ -71,11 +81,13 @@ class App extends Component {
         <div id="simple_storage_box" class="row">
         <div class="col-sm-6 col-sm-push-3 col-md-4 col-md-push-4">
           <div class="panel panel-default">
-          
+
             <div class="panel-body">
               <h3 class="panel-title">SimpleStorage</h3>
-              {contract_status}
-              <p>Web3 provider: {this.state.web3.currentProvider.host}</p>
+              <ul>
+                {contract_status}
+                <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
+              </ul>
               <hr/>
 
               <ValueToStoreForm 
@@ -89,6 +101,7 @@ class App extends Component {
 
               <LookupCarForm
                   car_contract_spec={this.state.car_contract_spec} 
+                  lease_contract_spec={this.state.lease_contract_spec} 
                   account={this.state.accounts[0]} />
               <hr/>
             </div>
@@ -189,7 +202,11 @@ class LookupCarForm extends React.Component {
     this.input = React.createRef();
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
+      lease_contract_spec: this.props.lease_contract_spec,
       account: this.props.account,
+      lease_start_timestamp: 0,
+      lease_end_timestamp: 0,
+      lease_driver: 0,
     }
   }
 
@@ -207,6 +224,34 @@ class LookupCarForm extends React.Component {
      });
   }
 
+
+  handleLeaseRequest = async (event) => {
+    event.preventDefault();
+
+    const { account, car_contract, lease_contract_spec } = this.state;
+
+    // December 3, 2018 12:00:00 PM
+    var start_timestamp = 1543838400;
+    // December 9, 2018 11:59:59 AM
+    var end_timestamp = 1544356799;
+
+    const tx = await car_contract.requestContractDraft(start_timestamp, end_timestamp, { from: account });
+    console.log(tx);
+    let draft_contract_address = tx.logs[0].args.contractAddress;
+    let lease_contract = await lease_contract_spec.at(draft_contract_address);
+    let lease_start_timestamp = await lease_contract.start_timestamp();
+    let lease_end_timestamp = await lease_contract.end_timestamp();
+    let lease_driver = await lease_contract.the_driver();
+
+    this.setState({ 
+      draft_contract: lease_contract,
+      draft_contract_address,
+      lease_start_timestamp: lease_start_timestamp.toNumber(),
+      lease_end_timestamp: lease_end_timestamp.toNumber(),
+      lease_driver,
+     });
+  }
+
   render() {
     let car_address = this.state.car_contract ? this.state.car_contract.address : "";
     return (
@@ -218,9 +263,20 @@ class LookupCarForm extends React.Component {
           </label>
           <input type="submit" value="Find it!" />
         </form>
+
         <ul>
           <li>Address: {car_address}</li>
           <li>VIN: {this.state.car_vin}</li>
+        </ul>
+
+        <form onSubmit={this.handleLeaseRequest}>
+          <button type="submit" class="btn btn-primary btn-sm">Request Draft</button>
+        </form>
+        <ul>
+          <li>Draft contract: {this.state.draft_contract_address}</li>
+          <li>Start: {this.state.lease_start_timestamp}</li>
+          <li>End: {this.state.lease_end_timestamp}</li>
+          <li>Driver: {this.state.lease_driver}</li>
         </ul>
       </div>
     );
