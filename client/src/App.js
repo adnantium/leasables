@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
-// import LeasableCarContract from "./contracts/LeasableCar.json";
+import LeasableCarContract from "./contracts/LeasableCar.json";
 import getWeb3 from "./utils/getWeb3";
 
 import "./App.css";
@@ -25,30 +25,18 @@ class App extends Component {
       // We'll need this to make a call to the contract
       const accounts = await web3.eth.getAccounts();
 
-      // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
-
-      let deployedNetwork;
-
-      // SimpleStorage contract is already deployed at an address.
-      // Need to lookup that address in the json interface object
-      // Will need that along with the contract's ABI to
-      // get a usable contract object that we can interact with
-      deployedNetwork = SimpleStorageContract.networks[networkId];
-      // const storage_contract = new web3.eth.Contract(
-      //   SimpleStorageContract.abi,
-      //   deployedNetwork && deployedNetwork.address,
-      // );
-
-      // SimpleStorageContract.network = networkId;
       var storage_contract_spec = truffle_contract(SimpleStorageContract);
       storage_contract_spec.setProvider(web3.currentProvider);
       var storage_contract = await storage_contract_spec.deployed();
 
-
+      // We're just going the store the 'spec' of the contract. It not a
+      // particular instance of a deployed contract. Need the address to do that
+      var car_contract_spec = truffle_contract(LeasableCarContract);
+      car_contract_spec.setProvider(web3.currentProvider);
+      
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
-      this.setState({ web3, accounts, storage_contract });
+      this.setState({ web3, accounts, storage_contract, car_contract_spec });
       
     } catch (error) {
       alert(
@@ -99,6 +87,10 @@ class App extends Component {
                 storage_contract={this.state.storage_contract} 
                 account={this.state.accounts[0]} />    
 
+              <LookupCarForm
+                  car_contract_spec={this.state.car_contract_spec} 
+                  account={this.state.accounts[0]} />
+              <hr/>
             </div>
 
           </div>
@@ -190,3 +182,47 @@ class GetStoredValue extends React.Component {
   }
 }
 
+class LookupCarForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.input = React.createRef();
+    this.state = {
+      car_contract_spec: this.props.car_contract_spec,
+      account: this.props.account,
+    }
+  }
+
+  handleSubmit = async (event) => {
+    event.preventDefault();
+
+    var car_address = this.input.current.value;
+    
+    let car_contract = await this.state.car_contract_spec.at(car_address);
+    let car_vin = await car_contract.VIN.call();
+
+    this.setState({ 
+      car_contract,
+      car_vin,
+     });
+  }
+
+  render() {
+    let car_address = this.state.car_contract ? this.state.car_contract._address : "";
+    return (
+      <div>
+        <form onSubmit={this.handleSubmit}>
+          <label>
+            LeasableCar Contract address:
+            <input id="car_address" name="car_address" type="text" ref={this.input} />
+          </label>
+          <input type="submit" value="Find it!" />
+        </form>
+        <ul>
+          <li>Address: {car_address}</li>
+          <li>VIN: {this.state.car_vin}</li>
+        </ul>
+      </div>
+    );
+  }
+}
