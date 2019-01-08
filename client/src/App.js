@@ -62,7 +62,7 @@ class App extends Component {
       <div class="container">
         <div class="row">
           <div class="col-xs-12 col-sm-8 col-sm-push-2">
-            <h1 class="text-center">SimpleStorage.sol Demo</h1>
+            <h1>SimpleStorage.sol Demo</h1>
             <hr/>
             <br/>
           </div>
@@ -208,7 +208,7 @@ class LookupCarForm extends React.Component {
   }
 
   render() {
-    let car_address = this.state.car_contract ? this.state.car_contract._address : "";
+    let car_address = this.state.car_contract ? this.state.car_contract.address : "";
     return (
       <div>
         <form onSubmit={this.handleSubmit}>
