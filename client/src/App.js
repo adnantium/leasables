@@ -70,7 +70,7 @@ class App extends Component {
       <div class="container">
 
         <div class="row">
-          <div class="col">
+          <div class="col-sm-6">
             <h2>Leaser</h2>
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
@@ -81,31 +81,31 @@ class App extends Component {
 
       
         <div class="row">
-          <div class="col">
+          <div class="col-sm-6">
 
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <h3 class="panel-title">SimpleStorage.sol Demo</h3>
-              </div>
-              <div class="panel-body">
-                <ul>
-                  {contract_status}
-                  <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
-                </ul>
-
-                <ValueToStoreForm 
-                  storage_contract={this.state.storage_contract} 
-                  account={this.state.accounts[0]} />
-                <hr/>
-
-                <GetStoredValue
-                  storage_contract={this.state.storage_contract} 
-                  account={this.state.accounts[0]} />    
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">SimpleStorage.sol Demo</h5>
+                <p class="card-text">
+                  <ul>
+                    {contract_status}
+                    <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
+                  </ul>
+                </p>
               </div>
             </div>
+
+            <ValueToStoreForm 
+              storage_contract={this.state.storage_contract} 
+              account={this.state.accounts[0]} />
+
+
+            <GetStoredValue
+              storage_contract={this.state.storage_contract} 
+              account={this.state.accounts[0]} />    
+
           </div>
         </div>
-
     </div>
     );
   }
@@ -146,19 +146,26 @@ class ValueToStoreForm extends React.Component {
      });
   }
 
+
+
   render() {
     return (
-      <div>
-        <form onSubmit={this.handleSubmit}>
-            <input id="to_store" name="to_store" type="text" class="form-control" placeholder="a uint to store" ref={this.input} />
-            <button class="btn btn-primary btn-sm" type="submit">Set it!</button>
-        </form>
-        <ul>
-          <li>transactionHash: {this.state.transactionHash}</li>
-          <li>blockHash: {this.state.blockHash}</li>
-          <li>blockNumber: {this.state.blockNumber}</li>
-          <li>gasUsed: {this.state.gasUsed}</li>
-        </ul>
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">SimpleStorage.setInt(uint x)</h6>
+          <form onSubmit={this.handleSubmit}>
+              <input id="to_store" name="to_store" type="text" class="form-control" placeholder="a uint to store" ref={this.input} />
+              <button class="btn btn-primary btn-sm" type="submit">Set it!</button>
+          </form>
+          <p class="card-text">
+            <ul>
+              <li>transactionHash: {this.state.transactionHash}</li>
+              <li>blockHash: {this.state.blockHash}</li>
+              <li>blockNumber: {this.state.blockNumber}</li>
+              <li>gasUsed: {this.state.gasUsed}</li>
+            </ul>
+          </p>
+        </div>
       </div>
     );
   }
@@ -184,10 +191,15 @@ class GetStoredValue extends React.Component {
 
   render() {
     return (
-      <p>
-        <button type="submit" onClick={this.handleGet} class="btn btn-primary btn-sm">Get it!</button>
-        Stored value: {this.state.stored_value}
-      </p>
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">SimpleStorage.getInt()</h6>
+          <p class="card-text">
+            <button type="submit" onClick={this.handleGet} class="btn btn-primary btn-sm">Get it!</button>
+            Stored value: {this.state.stored_value}
+          </p>
+        </div>
+      </div>
     );
   }
 }
@@ -252,7 +264,8 @@ class LookupCarForm extends React.Component {
   render() {
     let car_address = this.state.car_contract ? this.state.car_contract.address : "";
     return (
-      <div>
+    <div class="card">
+      <div class="card-body">
         <form onSubmit={this.handleSubmit}>
           <label>
             LeasableCar Contract address:
@@ -276,6 +289,7 @@ class LookupCarForm extends React.Component {
           <li>Driver: {this.state.lease_driver}</li>
         </ul>
       </div>
+    </div>
     );
   }
 }
