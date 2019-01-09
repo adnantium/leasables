@@ -8,6 +8,8 @@ import LeaseAgreement from "./contracts/LeaseContract.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
+import SimpleStorageWrite from "./SimpleStorageWrite";
+import SimpleStorageRead from "./SimpleStorageRead";
 
 var truffle_contract = require("truffle-contract");
 
@@ -106,10 +108,10 @@ class App extends Component {
                 </p>
               </div>
             </div>
-            <ValueToStoreForm 
+            <SimpleStorageWrite 
               storage_contract={this.state.storage_contract} 
               account={this.state.accounts[0]} />
-            <GetStoredValue
+            <SimpleStorageRead
               storage_contract={this.state.storage_contract} 
               account={this.state.accounts[0]} />    
           </div>
@@ -137,97 +139,6 @@ class App extends Component {
 }
 
 export default App;
-
-class ValueToStoreForm extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.input = React.createRef();
-    this.state = {
-      storage_contract: this.props.storage_contract,
-      account: this.props.account,
-      transactionHash: "nothing yet",
-      blockHash: "nothing yet",
-      blockNumber: "nothing yet",
-      gasUsed: "nothing yet",
-    }
-  }
-
-  handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const { account, storage_contract } = this.state;
-
-    var to_store = this.input.current.value;
-    console.log("data: " + to_store);
-
-    const set_response = await storage_contract.setInt(to_store, { from: account });
-
-    this.setState({ 
-      transactionHash: set_response.tx,
-      blockHash: set_response.receipt.blockHash,
-      blockNumber: set_response.receipt.blockNumber,
-      gasUsed: set_response.receipt.gasUsed,
-     });
-  }
-
-
-
-  render() {
-    return (
-      <div class="card">
-        <div class="card-body">
-          <h6 class="card-title">SimpleStorage.setInt(uint x)</h6>
-          <form onSubmit={this.handleSubmit}>
-              <input id="to_store" name="to_store" type="text" class="form-control" placeholder="a uint to store" ref={this.input} />
-              <button class="btn btn-primary btn-sm" type="submit">Set it!</button>
-          </form>
-          <p class="card-text">
-            <ul>
-              <li>transactionHash: {this.state.transactionHash}</li>
-              <li>blockHash: {this.state.blockHash}</li>
-              <li>blockNumber: {this.state.blockNumber}</li>
-              <li>gasUsed: {this.state.gasUsed}</li>
-            </ul>
-          </p>
-        </div>
-      </div>
-    );
-  }
-}
-class GetStoredValue extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleGet = this.handleGet.bind(this);
-    this.state = {
-      stored_value: null,
-      storage_contract: this.props.storage_contract,
-      account: this.props.account,
-    }
-  }
-
-  handleGet = async (event) => {    
-    event.preventDefault();
-    const storage_contract = this.state.storage_contract;
-    const response = await storage_contract.getInt.call();
-    console.log("got: " + response.toNumber());
-    this.setState({ stored_value: response.toNumber() });
-  }
-
-  render() {
-    return (
-      <div class="card">
-        <div class="card-body">
-          <h6 class="card-title">SimpleStorage.getInt()</h6>
-          <p class="card-text">
-            <button type="submit" onClick={this.handleGet} class="btn btn-primary btn-sm">Get it!</button>
-            Stored value: {this.state.stored_value}
-          </p>
-        </div>
-      </div>
-    );
-  }
-}
 
 class LookupCarForm extends React.Component {
   constructor(props) {
