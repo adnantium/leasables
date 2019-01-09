@@ -7,6 +7,8 @@ import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseAgreement from "./contracts/LeaseContract.json";
 import getWeb3 from "./utils/getWeb3";
 
+import ConnectionStatusCard from "./ConnectionStatus";
+
 var truffle_contract = require("truffle-contract");
 
 class App extends Component {
@@ -136,51 +138,6 @@ class App extends Component {
 
 export default App;
 
-class ConnectionStatusCard extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      web3: this.props.web3,
-      accounts: this.props.accounts,
-    }
-  }
-
-  render() {
-
-    let cp = this.state.web3.currentProvider;
-    // let is_metamask = cp.isMetaMask ? "Its metamask!" : "nope.";
-
-    let connection_status;
-    if (cp.isMetaMask) {
-      connection_status = <ul>
-        <li>Using metamask</li>
-        <li>selectedAddress: {cp.selectedAddress}</li>
-        <li>isConnected(): {cp.isConnected() ? "connected!" : "not connected!"}</li>
-      </ul>;
-    } else {
-      connection_status = <ul>
-        <li>Not using metamask</li>
-        <li>connected: {cp.connected}</li>
-        <li>host: {cp.host}</li>
-      </ul>;
-    }
-    const accounts_list = this.state.accounts.map((acct) =>
-      <li>{acct}</li>
-    );
-
-    return(
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Connection Status</h5>
-          <p class="card-text">
-            {connection_status}
-            Accounts: <ul>{accounts_list}</ul>
-          </p>
-        </div>
-      </div> 
-    );
-  }
-}
 class ValueToStoreForm extends React.Component {
   constructor(props) {
     super(props);
