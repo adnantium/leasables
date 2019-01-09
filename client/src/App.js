@@ -32,6 +32,7 @@ class App extends Component {
       // Use web3 to get the user's accounts.
       // We'll need this to make a call to the contract
       const accounts = await web3.eth.getAccounts();
+      const account = accounts[0];
 
       var storage_contract_spec = truffle_contract(SimpleStorageContract);
       storage_contract_spec.setProvider(web3.currentProvider);
@@ -47,7 +48,10 @@ class App extends Component {
 
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
-      this.setState({ web3, accounts, 
+      this.setState({ 
+        web3, 
+        accounts, 
+        account,
         storage_contract, 
         car_contract_spec,
         lease_agreement_spec,
@@ -86,6 +90,9 @@ class App extends Component {
         <div class="row">
           <div class="col-sm-10">
             <h2>Leaser</h2>
+            <div class="alert alert-light" role="alert">
+              Account: {this.state.account}
+            </div>
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
@@ -174,10 +181,12 @@ class LookupCarForm extends React.Component {
     }
 
     let car_vin = await car_contract.VIN.call();
+    let car_owner = await car_contract.owner.call();
 
     this.setState({ 
       car_contract,
       car_vin,
+      car_owner,
      });
   }
 
@@ -201,7 +210,7 @@ class LookupCarForm extends React.Component {
         lease_driver,
       });    
     } catch (error) {
-      this.setState({car_lookup_error})
+      this.setState({agreement_lookup_error: error.message})
     }
   }
 
@@ -240,6 +249,19 @@ class LookupCarForm extends React.Component {
     if (this.state.car_lookup_error) {
       error_text = <small id="passwordHelpBlockcarLookupError" class="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
     }
+
+    let account = this.state.accounts[0];
+    let is_driver_or_owner;
+    if (this.state.draft_contract) {
+      if (account == this.state.lease_driver) {
+        is_driver_or_owner = "The Driver";
+      } else if (account ==  this.state.car_owner) {
+        is_driver_or_owner = "The Car Owner";
+      } else {
+        is_driver_or_owner = "Not Owner or Driver!";
+      }
+    }
+
     return (
     <div class="card">
       <div class="card-body">
@@ -255,6 +277,7 @@ class LookupCarForm extends React.Component {
         <ul>
           <li>Address: {car_address}</li>
           <li>VIN: {this.state.car_vin}</li>
+          <li>Owner: {this.state.car_owner}</li>
         </ul>
 
         <form onSubmit={this.handleLeaseRequest}>
@@ -274,7 +297,13 @@ class LookupCarForm extends React.Component {
           <li>Start: {this.state.lease_start_timestamp}</li>
           <li>End: {this.state.lease_end_timestamp}</li>
           <li>Driver: {this.state.lease_driver}</li>
+          <li>You are: {is_driver_or_owner}</li>
         </ul>
+
+        <form onSubmit={this.handleDriverSignAgreement}>
+          <button type="submit" class="btn btn-primary btn-sm">Sign Agreement</button>
+        </form>
+
       </div>
     </div>
     );
