@@ -153,6 +153,7 @@ class LookupCarForm extends React.Component {
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
+      car_lookup_error: "",
     }
   }
 
@@ -160,8 +161,18 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
 
     var car_address = this.car_address_input.current.value;
-    
-    let car_contract = await this.state.car_contract_spec.at(car_address);
+
+    let car_contract;
+    try {
+      car_contract = await this.state.car_contract_spec.at(car_address);
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        car_lookup_error: error.message,
+      })
+      return;
+    }
+
     let car_vin = await car_contract.VIN.call();
 
     this.setState({ 
@@ -176,18 +187,22 @@ class LookupCarForm extends React.Component {
 
     const { lease_agreement_spec } = this.state;
 
-    let lease_agreement = await lease_agreement_spec.at(agreement_address);
-    let lease_start_timestamp = await lease_agreement.start_timestamp();
-    let lease_end_timestamp = await lease_agreement.end_timestamp();
-    let lease_driver = await lease_agreement.the_driver();
+    try {
+      let lease_agreement = await lease_agreement_spec.at(agreement_address);
+      let lease_start_timestamp = await lease_agreement.start_timestamp();
+      let lease_end_timestamp = await lease_agreement.end_timestamp();
+      let lease_driver = await lease_agreement.the_driver();
 
-    this.setState({ 
-      draft_contract: lease_agreement,
-      draft_contract_address: agreement_address,
-      lease_start_timestamp: lease_start_timestamp.toNumber(),
-      lease_end_timestamp: lease_end_timestamp.toNumber(),
-      lease_driver,
-     });    
+      this.setState({ 
+        draft_contract: lease_agreement,
+        draft_contract_address: agreement_address,
+        lease_start_timestamp: lease_start_timestamp.toNumber(),
+        lease_end_timestamp: lease_end_timestamp.toNumber(),
+        lease_driver,
+      });    
+    } catch (error) {
+      this.setState({car_lookup_error})
+    }
   }
 
   handleLeaseRequest = async (event) => {
@@ -221,6 +236,10 @@ class LookupCarForm extends React.Component {
 
   render() {
     let car_address = this.state.car_contract ? this.state.car_contract.address : "";
+    let error_text;
+    if (this.state.car_lookup_error) {
+      error_text = <small id="passwordHelpBlockcarLookupError" class="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
+    }
     return (
     <div class="card">
       <div class="card-body">
@@ -229,6 +248,7 @@ class LookupCarForm extends React.Component {
             LeasableCar Contract address:
             <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
+          {error_text}
           <input type="submit" value="Find it!" />
         </form>
 
