@@ -85,7 +85,7 @@ class App extends Component {
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
-              account={this.state.accounts[0]} />
+              accounts={this.state.accounts} />
           </div>
         </div>
         </TabPanel>
@@ -275,22 +275,23 @@ class GetStoredValue extends React.Component {
 class LookupCarForm extends React.Component {
   constructor(props) {
     super(props);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.input = React.createRef();
+    this.handleCarLookup = this.handleCarLookup.bind(this);
+    this.car_address_input = React.createRef();
+    this.agreement_address_input = React.createRef();
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
-      account: this.props.account,
+      accounts: this.props.accounts,
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
     }
   }
 
-  handleSubmit = async (event) => {
+  handleCarLookup = async (event) => {
     event.preventDefault();
 
-    var car_address = this.input.current.value;
+    var car_address = this.car_address_input.current.value;
     
     let car_contract = await this.state.car_contract_spec.at(car_address);
     let car_vin = await car_contract.VIN.call();
@@ -301,11 +302,31 @@ class LookupCarForm extends React.Component {
      });
   }
 
+  handleAgreementLookup = async (event) => {
+    event.preventDefault();
+    var agreement_address = this.agreement_address_input.current.value;
+
+    const { lease_agreement_spec } = this.state;
+
+    let lease_agreement = await lease_agreement_spec.at(agreement_address);
+    let lease_start_timestamp = await lease_agreement.start_timestamp();
+    let lease_end_timestamp = await lease_agreement.end_timestamp();
+    let lease_driver = await lease_agreement.the_driver();
+
+    this.setState({ 
+      draft_contract: lease_agreement,
+      draft_contract_address: agreement_address,
+      lease_start_timestamp: lease_start_timestamp.toNumber(),
+      lease_end_timestamp: lease_end_timestamp.toNumber(),
+      lease_driver,
+     });    
+  }
 
   handleLeaseRequest = async (event) => {
     event.preventDefault();
 
-    const { account, car_contract, lease_agreement_spec } = this.state;
+    const { accounts, car_contract, lease_agreement_spec } = this.state;
+    const account = accounts[0];
 
     // December 3, 2018 12:00:00 PM
     var start_timestamp = 1543838400;
@@ -315,6 +336,7 @@ class LookupCarForm extends React.Component {
     const tx = await car_contract.requestContractDraft(start_timestamp, end_timestamp, { from: account });
     console.log(tx);
     let draft_contract_address = tx.logs[0].args.contractAddress;
+
     let lease_agreement = await lease_agreement_spec.at(draft_contract_address);
     let lease_start_timestamp = await lease_agreement.start_timestamp();
     let lease_end_timestamp = await lease_agreement.end_timestamp();
@@ -334,10 +356,10 @@ class LookupCarForm extends React.Component {
     return (
     <div class="card">
       <div class="card-body">
-        <form onSubmit={this.handleSubmit}>
+        <form onSubmit={this.handleCarLookup}>
           <label>
             LeasableCar Contract address:
-            <input id="car_address" name="car_address" type="text" ref={this.input} />
+            <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
           <input type="submit" value="Find it!" />
         </form>
@@ -350,6 +372,15 @@ class LookupCarForm extends React.Component {
         <form onSubmit={this.handleLeaseRequest}>
           <button type="submit" class="btn btn-primary btn-sm">Request Draft</button>
         </form>
+
+        <form onSubmit={this.handleAgreementLookup}>
+          <label>
+            Agreement address:
+            <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
+          </label>
+          <input type="submit" value="Find it!" />
+        </form>
+
         <ul>
           <li>Draft contract: {this.state.draft_contract_address}</li>
           <li>Start: {this.state.lease_start_timestamp}</li>
