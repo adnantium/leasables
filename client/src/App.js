@@ -75,11 +75,12 @@ class App extends Component {
         <TabList>
           <Tab>Leaser</Tab>
           <Tab>SimpleStorage</Tab>
+          <Tab>Status</Tab>
         </TabList>
 
         <TabPanel>
         <div class="row">
-          <div class="col-sm-6">
+          <div class="col-sm-10">
             <h2>Leaser</h2>
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
@@ -91,7 +92,7 @@ class App extends Component {
 
         <TabPanel>
         <div class="row">
-          <div class="col-sm-6">
+          <div class="col-sm-10">
 
             <div class="card">
               <div class="card-body">
@@ -99,7 +100,6 @@ class App extends Component {
                 <p class="card-text">
                   <ul>
                     {contract_status}
-                    <li>Web3 provider: {this.state.web3.currentProvider.host}</li>
                   </ul>
                 </p>
               </div>
@@ -113,6 +113,21 @@ class App extends Component {
           </div>
         </div>
       </TabPanel>
+
+
+      <TabPanel>
+        <div class="row">
+          <div class="col-md-10">
+
+          <ConnectionStatusCard 
+            accounts={this.state.accounts}
+            web3={this.state.web3}
+          />
+
+          </div>
+        </div>
+      </TabPanel>
+
       </Tabs>
       </div>
     );
@@ -121,6 +136,51 @@ class App extends Component {
 
 export default App;
 
+class ConnectionStatusCard extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      web3: this.props.web3,
+      accounts: this.props.accounts,
+    }
+  }
+
+  render() {
+
+    let cp = this.state.web3.currentProvider;
+    // let is_metamask = cp.isMetaMask ? "Its metamask!" : "nope.";
+
+    let connection_status;
+    if (cp.isMetaMask) {
+      connection_status = <ul>
+        <li>Using metamask</li>
+        <li>selectedAddress: {cp.selectedAddress}</li>
+        <li>isConnected(): {cp.isConnected() ? "connected!" : "not connected!"}</li>
+      </ul>;
+    } else {
+      connection_status = <ul>
+        <li>Not using metamask</li>
+        <li>connected: {cp.connected}</li>
+        <li>host: {cp.host}</li>
+      </ul>;
+    }
+    const accounts_list = this.state.accounts.map((acct) =>
+      <li>{acct}</li>
+    );
+
+    return(
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Connection Status</h5>
+          <p class="card-text">
+            {connection_status}
+            Accounts: <ul>{accounts_list}</ul>
+          </p>
+        </div>
+      </div> 
+    );
+  }
+}
 class ValueToStoreForm extends React.Component {
   constructor(props) {
     super(props);
