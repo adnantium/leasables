@@ -53,7 +53,7 @@ contract('TestRequestContract', async function(accounts) {
         var tx = await car1_agreement.
             driverSign(
                 {from: driver_uid,
-                    value: 3,
+                    value: deposit_in,
                 });
 
         assert.equal(tx.logs.length, 1, "driverSign with exact deposit should only have 1 event!");
@@ -61,14 +61,55 @@ contract('TestRequestContract', async function(accounts) {
         assert.equal(tx.logs[0].event, "DriverSigned", "No DriverSigned event emitted!");
         assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
         assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
-        assert.equal(tx.logs[0].args.deposit_amount.toNumber(), 3, "DriverSigned deposit amount is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toNumber(), deposit_in, "DriverSigned deposit amount in tx response is bad!");
 
         var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount, deposit_in, "Driver depoist amount is not right!");
 
         var driver_balance_amount = await car1_agreement.driver_balance.call();
-        assert.equal(driver_balance_amount, 0, "Driver balance amount is not right!");
+        assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0!");
 
     });
+
+    it("Checking driverSign with extra deposit amount...", async function() {
+
+        var start_timestamp = 1543838400;
+        // December 9, 2018 11:59:59 AM
+        var end_timestamp = 1544356799;
+
+        const car1_agreement = await create_agreement(
+            car1, start_timestamp, end_timestamp, driver_uid);      
+                    
+        deposit_in = 4;
+        deposit_required = 3;
+        var tx = await car1_agreement.
+            driverSign(
+                {from: driver_uid,
+                    value: deposit_in,
+                });
+
+        assert.equal(tx.logs.length, 2, "driverSign with extra deposit should have 2 events!");
+
+        assert.ok(tx.logs[0].args, "No args in tx[0]!");
+        assert.equal(tx.logs[0].event, "DriverSigned", "No DriverSigned event emitted!");
+        assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
+        assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toNumber(), deposit_required, "DriverSigned deposit amount is bad!");
+
+        assert.ok(tx.logs[1].args, "No args in tx[1]!");
+        assert.equal(tx.logs[1].event, "DriverBalanceUpdated", "No DriverBalanceUpdated event emitted!");
+        assert.equal(tx.logs[1].args.the_car, car1_uid, "DriverBalanceUpdated car_uid is bad!");
+        assert.equal(tx.logs[1].args.the_driver, driver_uid, "DriverBalanceUpdated driver_uid is bad!");
+        var expected_balance = deposit_in - deposit_required;
+        assert.equal(tx.logs[1].args.new_balance.toNumber(), expected_balance, "DriverBalanceUpdated baalnce amount is bad!");
+
+        var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
+        assert.equal(driver_deposit_amount, deposit_required, "Driver deposit amount is not right!");
+
+        var driver_balance_amount = await car1_agreement.driver_balance.call();
+        assert.equal(driver_balance_amount, expected_balance, "Driver balance amount is not right!");
+
+    });
+
 
 });
