@@ -6,17 +6,16 @@ const Web3 = require('web3');
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
 
-// This returns a promise even because its async. 
-// This code works fine when called directly rather than in a function
-// needs to do a promise chain to resolve it
-// async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
-//     var tx = await the_car.
-//     requestContractDraft(start_timestamp, end_timestamp, 
-//         {from: driver_uid});
-//     var agreement_uid = tx.logs[0].args.contractAddress;
-//     const agreement = await LeaseAgreementArtifact.at(agreement_uid);
-//     return agreement;
-// }
+async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
+    var tx = await the_car.
+    requestContractDraft(start_timestamp, end_timestamp, 
+        {from: driver_uid});
+    var agreement_uid = tx.logs[0].args.contractAddress;
+    const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);
+    // Trying to await for the .at() call still returns a promise
+    // we have to return a promise and await at the function call.
+    return agreement_promise;
+}
 
 contract('TestRequestContract', async function(accounts) {
 
@@ -47,15 +46,8 @@ contract('TestRequestContract', async function(accounts) {
         // December 9, 2018 11:59:59 AM
         var end_timestamp = 1544356799;
 
-        // const car1_agreement = create_agreement(
-        //     car1, start_timestamp, end_timestamp, driver_uid);      
-
-        var tx = await car1.
-        requestContractDraft(start_timestamp, end_timestamp, 
-            {from: driver_uid});
-    
-        var agreement_uid = tx.logs[0].args.contractAddress;
-        const car1_agreement = await LeaseAgreementArtifact.at(agreement_uid);
+        const car1_agreement = await create_agreement(
+            car1, start_timestamp, end_timestamp, driver_uid);      
                     
         deposit_in = 3;
         var tx = await car1_agreement.
@@ -64,7 +56,7 @@ contract('TestRequestContract', async function(accounts) {
                     value: 3,
                 });
 
-        assert.equal(tx.logs.length, 1, "New LeaseAgreement creation should only have 1 event!");
+        assert.equal(tx.logs.length, 1, "driverSign with exact deposit should only have 1 event!");
         assert.ok(tx.logs[0].args, "No args in tx!");
         assert.equal(tx.logs[0].event, "DriverSigned", "No DriverSigned event emitted!");
         assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
