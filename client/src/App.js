@@ -202,8 +202,8 @@ class LookupCarForm extends React.Component {
       let lease_driver = await lease_agreement.the_driver();
 
       this.setState({ 
-        draft_contract: lease_agreement,
-        draft_contract_address: agreement_address,
+        lease_agreement,
+        lease_agreement_address: agreement_address,
         lease_start_timestamp: lease_start_timestamp.toNumber(),
         lease_end_timestamp: lease_end_timestamp.toNumber(),
         lease_driver,
@@ -226,9 +226,9 @@ class LookupCarForm extends React.Component {
 
     const tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
     console.log(tx);
-    let draft_contract_address = tx.logs[0].args.contractAddress;
+    let lease_agreement_address = tx.logs[0].args.contractAddress;
 
-    let lease_agreement = await lease_agreement_spec.at(draft_contract_address);
+    let lease_agreement = await lease_agreement_spec.at(lease_agreement_address);
     let lease_start_timestamp = await lease_agreement.start_timestamp();
     let lease_end_timestamp = await lease_agreement.end_timestamp();
     let lease_driver = await lease_agreement.the_driver();
@@ -240,8 +240,8 @@ class LookupCarForm extends React.Component {
     let driver_balance = await lease_agreement.driver_balance();
 
     this.setState({ 
-      draft_contract: lease_agreement,
-      draft_contract_address,
+      lease_agreement,
+      lease_agreement_address,
       lease_start_timestamp: lease_start_timestamp.toNumber(),
       lease_end_timestamp: lease_end_timestamp.toNumber(),
       lease_driver,
@@ -303,7 +303,7 @@ class LookupCarForm extends React.Component {
         </form>
 
         <ul>
-          <li>Draft contract: {this.state.draft_contract_address}</li>
+          <li>Draft contract: {this.state.lease_agreement_address}</li>
           <li>Start: {this.state.lease_start_timestamp}</li>
           <li>End: {this.state.lease_end_timestamp}</li>
           <li>Driver: {this.state.lease_driver}</li>
