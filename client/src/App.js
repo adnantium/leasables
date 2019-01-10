@@ -4,7 +4,7 @@ import "react-tabs/style/react-tabs.css";
 
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import LeasableCarContract from "./contracts/LeasableCar.json";
-import LeaseAgreement from "./contracts/LeaseContract.json";
+import LeaseAgreementContract from "./contracts/LeaseContract.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
@@ -19,7 +19,7 @@ class App extends Component {
     accounts: null, 
     storage_contract: null,
     car_contract_spec: null,
-    car_contract: null,
+    the_car: null,
     lease_agreement_spec: null,
     lease_agreement: null,
   };
@@ -43,7 +43,7 @@ class App extends Component {
       var car_contract_spec = truffle_contract(LeasableCarContract);
       car_contract_spec.setProvider(web3.currentProvider);
 
-      var lease_agreement_spec = truffle_contract(LeaseAgreement);
+      var lease_agreement_spec = truffle_contract(LeaseAgreementContract);
       lease_agreement_spec.setProvider(web3.currentProvider);
 
       // Set web3, accounts, and contract to the state so that other 
@@ -125,8 +125,7 @@ class App extends Component {
         </div>
       </TabPanel>
 
-
-      <TabPanel>
+        <TabPanel>
         <div class="row">
           <div class="col-md-10">
 
@@ -169,9 +168,9 @@ class LookupCarForm extends React.Component {
 
     var car_address = this.car_address_input.current.value;
 
-    let car_contract;
+    let the_car;
     try {
-      car_contract = await this.state.car_contract_spec.at(car_address);
+      the_car = await this.state.car_contract_spec.at(car_address);
     } catch (error) {
       console.log(error)
       this.setState({
@@ -180,11 +179,11 @@ class LookupCarForm extends React.Component {
       return;
     }
 
-    let car_vin = await car_contract.VIN.call();
-    let car_owner = await car_contract.owner.call();
+    let car_vin = await the_car.VIN.call();
+    let car_owner = await the_car.owner.call();
 
     this.setState({ 
-      car_contract,
+      the_car,
       car_vin,
       car_owner,
      });
@@ -217,7 +216,7 @@ class LookupCarForm extends React.Component {
   handleLeaseRequest = async (event) => {
     event.preventDefault();
 
-    const { accounts, car_contract, lease_agreement_spec } = this.state;
+    const { accounts, the_car, lease_agreement_spec } = this.state;
     const account = accounts[0];
 
     // December 3, 2018 12:00:00 PM
@@ -225,7 +224,7 @@ class LookupCarForm extends React.Component {
     // December 9, 2018 11:59:59 AM
     var end_timestamp = 1544356799;
 
-    const tx = await car_contract.requestContractDraft(start_timestamp, end_timestamp, { from: account });
+    const tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
     console.log(tx);
     let draft_contract_address = tx.logs[0].args.contractAddress;
 
@@ -244,10 +243,10 @@ class LookupCarForm extends React.Component {
   }
 
   render() {
-    let car_address = this.state.car_contract ? this.state.car_contract.address : "";
+    let car_address = this.state.the_car ? this.state.the_car.address : "";
     let error_text;
     if (this.state.car_lookup_error) {
-      error_text = <small id="passwordHelpBlockcarLookupError" class="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
+      error_text = <small id="carLookupError" class="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
     }
 
     let account = this.state.accounts[0];
