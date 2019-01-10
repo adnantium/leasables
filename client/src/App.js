@@ -197,17 +197,13 @@ class LookupCarForm extends React.Component {
 
     try {
       let lease_agreement = await lease_agreement_spec.at(agreement_address);
-      let lease_start_timestamp = await lease_agreement.start_timestamp();
-      let lease_end_timestamp = await lease_agreement.end_timestamp();
-      let lease_driver = await lease_agreement.the_driver();
 
       this.setState({ 
         lease_agreement,
         lease_agreement_address: agreement_address,
-        lease_start_timestamp: lease_start_timestamp.toNumber(),
-        lease_end_timestamp: lease_end_timestamp.toNumber(),
-        lease_driver,
       });    
+      this.refreshLeaseAgreementInfo(lease_agreement);
+
     } catch (error) {
       this.setState({agreement_lookup_error: error.message})
     }
@@ -229,6 +225,15 @@ class LookupCarForm extends React.Component {
     let lease_agreement_address = tx.logs[0].args.contractAddress;
 
     let lease_agreement = await lease_agreement_spec.at(lease_agreement_address);
+
+    this.setState({ 
+      lease_agreement,
+      lease_agreement_address,
+     });
+     this.refreshLeaseAgreementInfo(lease_agreement);
+  }
+
+  async refreshLeaseAgreementInfo(lease_agreement) {
     let lease_start_timestamp = await lease_agreement.start_timestamp();
     let lease_end_timestamp = await lease_agreement.end_timestamp();
     let lease_driver = await lease_agreement.the_driver();
