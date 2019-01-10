@@ -78,7 +78,7 @@ class App extends Component {
     }
 
     return (
-      <div class="container">
+      <div className="container">
       <Tabs>
         <TabList>
           <Tab>Leaser</Tab>
@@ -87,10 +87,10 @@ class App extends Component {
         </TabList>
 
         <TabPanel>
-        <div class="row">
-          <div class="col-sm-10">
+        <div className="row">
+          <div className="col-sm-10">
             <h2>Leaser</h2>
-            <div class="alert alert-light" role="alert">
+            <div className="alert alert-light" role="alert">
               Account: {this.state.account}
             </div>
             <LookupCarForm
@@ -102,13 +102,13 @@ class App extends Component {
         </TabPanel>
 
         <TabPanel>
-        <div class="row">
-          <div class="col-sm-10">
+        <div className="row">
+          <div className="col-sm-10">
 
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title">SimpleStorage.sol Demo</h5>
-                <p class="card-text">
+            <div className="card">
+              <div className="card-body">
+                <h5 className="card-title">SimpleStorage.sol Demo</h5>
+                <p className="card-text">
                   <ul>
                     {contract_status}
                   </ul>
@@ -126,8 +126,8 @@ class App extends Component {
       </TabPanel>
 
         <TabPanel>
-        <div class="row">
-          <div class="col-md-10">
+        <div className="row">
+          <div className="col-md-10">
 
           <ConnectionStatusCard 
             accounts={this.state.accounts}
@@ -245,8 +245,6 @@ class LookupCarForm extends React.Component {
     let driver_balance = await lease_agreement.driver_balance();
 
     this.setState({ 
-      lease_agreement,
-      lease_agreement_address,
       lease_start_timestamp: lease_start_timestamp.toNumber(),
       lease_end_timestamp: lease_end_timestamp.toNumber(),
       lease_driver,
@@ -255,14 +253,14 @@ class LookupCarForm extends React.Component {
       owner_deposit_required: owner_deposit_required.toNumber(),
       owner_deposit_amount: owner_deposit_amount.toNumber(),
       driver_balance: driver_balance.toNumber(),
-     });
+    });
   }
 
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
     let error_text;
     if (this.state.car_lookup_error) {
-      error_text = <small id="carLookupError" class="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
+      error_text = <small id="carLookupError" className="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
     }
 
     let account = this.state.accounts[0];
@@ -278,8 +276,8 @@ class LookupCarForm extends React.Component {
     }
 
     return (
-    <div class="card">
-      <div class="card-body">
+    <div className="card">
+      <div className="card-body">
         <form onSubmit={this.handleCarLookup}>
           <label>
             LeasableCar Contract address:
@@ -296,7 +294,7 @@ class LookupCarForm extends React.Component {
         </ul>
 
         <form onSubmit={this.handleLeaseRequest}>
-          <button type="submit" class="btn btn-primary btn-sm">Request Draft</button>
+          <button type="submit" className="btn btn-primary btn-sm">Request Draft</button>
         </form>
 
         <form onSubmit={this.handleAgreementLookup}>
@@ -320,8 +318,8 @@ class LookupCarForm extends React.Component {
           <li>Driver balance: {this.state.driver_balance}</li>
         </ul>
 
-        <form onSubmit={this.handleDriverSignAgreement}>
-          <button type="submit" class="btn btn-primary btn-sm">Sign Agreement</button>
+        <form onSubmit={this.handleDepositSubmit}>
+          <button type="submit" className="btn btn-primary btn-sm">Sign Agreement with Deposit</button>
         </form>
 
       </div>
