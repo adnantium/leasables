@@ -4,7 +4,7 @@ import "react-tabs/style/react-tabs.css";
 
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import LeasableCarContract from "./contracts/LeasableCar.json";
-import LeaseAgreementContract from "./contracts/LeaseContract.json";
+import LeaseAgreementContract from "./contracts/LeaseAgreement.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
@@ -233,12 +233,23 @@ class LookupCarForm extends React.Component {
     let lease_end_timestamp = await lease_agreement.end_timestamp();
     let lease_driver = await lease_agreement.the_driver();
 
+    let driver_deposit_required = await lease_agreement.driver_deposit_required();
+    let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
+    let owner_deposit_required = await lease_agreement.owner_deposit_required();
+    let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
+    let driver_balance = await lease_agreement.driver_balance();
+
     this.setState({ 
       draft_contract: lease_agreement,
       draft_contract_address,
       lease_start_timestamp: lease_start_timestamp.toNumber(),
       lease_end_timestamp: lease_end_timestamp.toNumber(),
       lease_driver,
+      driver_deposit_required: driver_deposit_required.toNumber(),
+      driver_deposit_amount: driver_deposit_amount.toNumber(),
+      owner_deposit_required: owner_deposit_required.toNumber(),
+      owner_deposit_amount: owner_deposit_amount.toNumber(),
+      driver_balance: driver_balance.toNumber(),
      });
   }
 
@@ -297,6 +308,11 @@ class LookupCarForm extends React.Component {
           <li>End: {this.state.lease_end_timestamp}</li>
           <li>Driver: {this.state.lease_driver}</li>
           <li>You are: {is_driver_or_owner}</li>
+          <li>Driver deposit required: {this.state.driver_deposit_required}</li>
+          <li>Driver deposit received: {this.state.driver_deposit_amount}</li>
+          <li>Owner deposit required: {this.state.owner_deposit_required}</li>
+          <li>Owner deposit received: {this.state.owner_deposit_amount}</li>
+          <li>Driver balance: {this.state.driver_balance}</li>
         </ul>
 
         <form onSubmit={this.handleDriverSignAgreement}>
