@@ -23,7 +23,7 @@ async function create_agreement(the_car, start_timestamp, end_timestamp, driver_
     return agreement_promise;
 }
 
-contract('TestRequestContract', async function(accounts) {
+contract('TestSignAgreement', async function(accounts) {
 
     var car1;
     var car1_uid;
@@ -120,7 +120,7 @@ contract('TestRequestContract', async function(accounts) {
         } catch(error) {
             error_caught = true;
         }
-        assert.ok(error_caught === true, "Should not be able to give low deposit!")
+        assert.ok(error_caught === true, "Should not be able to give low driver deposit!")
 
         deposit_in = deposit_required;
         // Check only driver can sign
@@ -132,7 +132,7 @@ contract('TestRequestContract', async function(accounts) {
         } catch(error) {
             error_caught = true;
         }
-        assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit!")
+        assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit as the driver!")
 
         // Check double sign & deposit
         var error_caught = false;
@@ -145,7 +145,84 @@ contract('TestRequestContract', async function(accounts) {
         } catch(error) {
             error_caught = true;
         }
-        assert.ok(error_caught === true, "Cannot to sign and deposit again!")
+        assert.ok(error_caught === true, "Cannot to driver sign and deposit again!")
+    });
+
+    it("Checking ownerSign require() conditions...", async function() {
+
+        const car1_agreement = await create_test_agreement(car1, driver_uid);                          
+        var deposit_required = await car1_agreement.owner_deposit_required.call();
+        deposit_required = deposit_required.toNumber();
+
+
+        // Check min deposit required
+        // putting in less than required $
+        var deposit_in = deposit_required * 0.5;
+        var error_caught = false;
+        try {
+            var tx = await car1_agreement.
+                ownerSign({from: car_owner_uid, value: deposit_in});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Should not be able to give low owner deposit!")
+
+
+        // Check only owner can sign
+        // contract was created for a car owned by car_owner_uid but we will try to depoist from another account
+        deposit_in = deposit_required;
+        var error_caught = false;
+        try {
+            var tx = await car1_agreement.
+                ownerSign({from: some_other_account, value: deposit_in});
+        } catch(error) {
+            // console.log(error);
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit the as car owner!")
+
+        // 
+        // Check double sign & deposit
+        // 
+        var error_caught = false;
+        var tx = await car1_agreement.
+                ownerSign({from: car_owner_uid, value: deposit_in});
+        // try to deposit again
+        try {
+            var tx = await car1_agreement.
+                ownerSign({from: car_owner_uid, value: deposit_in});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Cannot to owner sign and deposit again!")
+
+
+    });
+
+
+    it("Checking ownerSign with exact deposit amount...", async function() {
+
+        const car1_agreement = await create_test_agreement(car1, driver_uid);
+            
+        var deposit_required = await car1_agreement.owner_deposit_required.call();
+        deposit_required = deposit_required.toNumber();
+        deposit_in = deposit_required;
+        var tx = await car1_agreement.
+            ownerSign({from: car_owner_uid, value: deposit_in});
+
+        assert.equal(tx.logs.length, 1, "ownerSign with exact deposit should only have 1 event!");
+        assert.ok(tx.logs[0].args, "No args in tx!");
+        assert.equal(tx.logs[0].event, "OwnerSigned", "No OwnerSigned event emitted!");
+        assert.equal(tx.logs[0].args.the_car, car1_uid, "OwnerSigned car_uid is bad!");
+        assert.equal(tx.logs[0].args.the_driver, driver_uid, "OwnerSigned driver_uid is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toNumber(), deposit_in, "OwnerSigned deposit amount in tx response is bad!");
+
+        var owner_deposit_amount = await car1_agreement.owner_deposit_amount.call();
+        assert.equal(owner_deposit_amount, deposit_in, "Owner deposit amount is not right!");
+
+        var car_balance_amount = await car1_agreement.car_balance.call();
+        assert.equal(car_balance_amount, 0, "Car balance amount should be 0 after exact deposit!");
+
     });
 
     // it("Checking driverSign ...", async function() {
