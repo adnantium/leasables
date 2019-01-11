@@ -1,5 +1,6 @@
 pragma solidity >=0.4.24 <0.6.0;
 
+import "./LeasableCar.sol";
 
 contract LeaseAgreement {
 
@@ -39,10 +40,13 @@ contract LeaseAgreement {
     uint256 public owner_deposit_amount = 0;
 
     uint256 public driver_balance = 0;
+    uint256 public car_balance = 0;
 
     event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp, uint256 daily_rate);
     event DriverSigned(address the_car, address the_driver, uint256 deposit_amount);
     event DriverBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
+    event OwnerSigned(address the_car, address the_driver, uint256 deposit_amount);
+    event CarBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     
     constructor (
         address _car, 
@@ -85,4 +89,23 @@ contract LeaseAgreement {
         }
     }
 
+    function ownerSign() public payable {
+
+        LeasableCar car_contract = LeasableCar(the_car);
+        address car_owner = car_contract.owner();
+
+        require(msg.sender == car_owner, "Only owner can sign agreement!");
+        require(is_owner_signed == false, "Agreement has already been signed by owner");
+        require(msg.value >= owner_deposit_required, "Insufficient deposit amount!");
+
+        owner_deposit_amount = owner_deposit_required;
+        is_owner_signed = true;
+        emit OwnerSigned(the_car, the_driver, owner_deposit_amount);
+
+        // add any extra $ to the driver's balance
+        if (msg.value > owner_deposit_required) {
+            car_balance = msg.value - owner_deposit_required;
+            emit CarBalanceUpdated(the_car, the_driver, car_balance);
+        }
+    }
 }
