@@ -6,7 +6,7 @@ const Web3 = require('web3');
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
 
-async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
+async function create_test_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
     var tx = await the_car.
     requestContractDraft(start_timestamp, end_timestamp, 
         {from: driver_uid});
@@ -31,25 +31,24 @@ contract('TestRequestContract', async function(accounts) {
     var gp = 100000000000;
 
     before(async function() {
-        // create a car from acct1
         car1 = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 99, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
         );
         car1_uid = car1.address
-        // console.log("test car uid: " + car1_uid);
     });
 
     it("Checking driverSign with exact deposit amount...", async function() {
 
         var start_timestamp = 1543838400;
-        // December 9, 2018 11:59:59 AM
         var end_timestamp = 1544356799;
 
-        const car1_agreement = await create_agreement(
-            car1, start_timestamp, end_timestamp, driver_uid);      
-                    
-        deposit_in = 3;
+        const car1_agreement = await create_test_agreement(
+            car1, start_timestamp, end_timestamp, driver_uid);
+            
+        var deposit_required = await car1_agreement.driver_deposit_required.call();
+        deposit_required = deposit_required.toNumber();
+        deposit_in = deposit_required;
         var tx = await car1_agreement.
             driverSign(
                 {from: driver_uid,
@@ -67,21 +66,24 @@ contract('TestRequestContract', async function(accounts) {
         assert.equal(driver_deposit_amount, deposit_in, "Driver depoist amount is not right!");
 
         var driver_balance_amount = await car1_agreement.driver_balance.call();
-        assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0!");
+        assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0 after exact deposit!");
+
+
 
     });
 
     it("Checking driverSign with extra deposit amount...", async function() {
 
         var start_timestamp = 1543838400;
-        // December 9, 2018 11:59:59 AM
         var end_timestamp = 1544356799;
 
-        const car1_agreement = await create_agreement(
+        const car1_agreement = await create_test_agreement(
             car1, start_timestamp, end_timestamp, driver_uid);      
                     
-        deposit_in = 4;
-        deposit_required = 3;
+        var deposit_required = await car1_agreement.driver_deposit_required.call();
+        deposit_required = deposit_required.toNumber();
+        // putting in extra $
+        var deposit_in = deposit_required * 1.5;
         var tx = await car1_agreement.
             driverSign(
                 {from: driver_uid,
