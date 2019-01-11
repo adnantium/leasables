@@ -29,23 +29,28 @@ contract LeaseAgreement {
     bool is_started = false;
     bool is_ended = false;
 
-    uint public driver_deposit_required = 3;
-    uint public driver_deposit_amount = 0;
+    // add these balances and amounts are in wei!
+    uint256 public daily_rate;
 
-    uint public owner_deposit_required = 1;
-    uint public owner_deposit_amount = 0;
+    uint256 public driver_deposit_required;
+    uint256 public driver_deposit_amount = 0;
 
-    uint public driver_balance = 0;
+    uint256 public owner_deposit_required;
+    uint256 public owner_deposit_amount = 0;
 
-    event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp);
-    event DriverSigned(address the_car, address the_driver, uint deposit_amount);
-    event DriverBalanceUpdated(address the_car, address the_driver, uint new_balance);
+    uint256 public driver_balance = 0;
+
+    event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp, uint256 daily_rate);
+    event DriverSigned(address the_car, address the_driver, uint256 deposit_amount);
+    event DriverBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     
     constructor (
         address _car, 
         address _driver, 
         uint _start_timestamp, 
-        uint _end_timestamp) 
+        uint _end_timestamp,
+        uint256 _daily_rate
+        ) 
         public 
     {
         contract_creator = msg.sender;
@@ -53,8 +58,15 @@ contract LeaseAgreement {
         the_driver = _driver;
         start_timestamp = _start_timestamp;
         end_timestamp = _end_timestamp;
+        daily_rate = _daily_rate;
 
-        emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp);
+        // default deposit amounts:
+        // driver: 4 weeks of payments
+        // owner: 2 weeks
+        driver_deposit_required = daily_rate * 28;
+        owner_deposit_required = daily_rate * 14;
+
+        emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate);
     }
 
     function driverSign() public payable {

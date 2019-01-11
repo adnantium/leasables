@@ -12,6 +12,13 @@ import SimpleStorageWrite from "./SimpleStorageWrite";
 import SimpleStorageRead from "./SimpleStorageRead";
 
 var truffle_contract = require("truffle-contract");
+var web3 = require("web3");
+
+
+function weiToEther(weis) {
+  return web3.utils.fromWei(weis.toString());
+}
+
 
 class App extends Component {
   state = { 
@@ -181,11 +188,14 @@ class LookupCarForm extends React.Component {
 
     let car_vin = await the_car.VIN.call();
     let car_owner = await the_car.owner.call();
+    let car_daily_rate_wei = await the_car.daily_rate.call();
+    let car_daily_rate = weiToEther(car_daily_rate_wei);
 
     this.setState({ 
       the_car,
       car_vin,
       car_owner,
+      car_daily_rate: car_daily_rate,
      });
   }
 
@@ -248,12 +258,34 @@ class LookupCarForm extends React.Component {
       lease_start_timestamp: lease_start_timestamp.toNumber(),
       lease_end_timestamp: lease_end_timestamp.toNumber(),
       lease_driver,
-      driver_deposit_required: driver_deposit_required.toNumber(),
-      driver_deposit_amount: driver_deposit_amount.toNumber(),
-      owner_deposit_required: owner_deposit_required.toNumber(),
-      owner_deposit_amount: owner_deposit_amount.toNumber(),
-      driver_balance: driver_balance.toNumber(),
+      driver_deposit_required: weiToEther(driver_deposit_required),
+      driver_deposit_amount: weiToEther(driver_deposit_amount),
+      owner_deposit_required: weiToEther(owner_deposit_required),
+      owner_deposit_amount: weiToEther(owner_deposit_amount),
+      driver_balance: weiToEther(driver_balance),
     });
+
+  }
+
+  handleDepositSubmit = async (event) => {
+    event.preventDefault();
+
+    const { accounts, lease_agreement, driver_deposit_required } = this.state;
+    const account = accounts[0];
+
+    const amt_wei = web3.utils.toWei('' + driver_deposit_required);
+    const tx = await lease_agreement
+      .driverSign({from: account, value: amt_wei});
+    console.log(tx);
+
+    let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
+    let driver_balance = await lease_agreement.driver_balance();
+
+    this.setState({
+      driver_deposit_amount: weiToEther(driver_deposit_amount),
+      driver_balance: weiToEther(driver_balance),
+    });
+    
   }
 
   render() {
@@ -265,7 +297,7 @@ class LookupCarForm extends React.Component {
 
     let account = this.state.accounts[0];
     let is_driver_or_owner;
-    if (this.state.draft_contract) {
+    if (this.state.lease_agreement) {
       if (account == this.state.lease_driver) {
         is_driver_or_owner = "The Driver";
       } else if (account ==  this.state.car_owner) {
@@ -291,6 +323,7 @@ class LookupCarForm extends React.Component {
           <li>Address: {car_address}</li>
           <li>VIN: {this.state.car_vin}</li>
           <li>Owner: {this.state.car_owner}</li>
+          <li>Daily Rate: {this.state.car_daily_rate}</li>
         </ul>
 
         <form onSubmit={this.handleLeaseRequest}>

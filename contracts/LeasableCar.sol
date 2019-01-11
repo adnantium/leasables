@@ -32,7 +32,9 @@ contract LeasableCar is Leasable {
 
     LeaseAgreement[] public lease_agreements;
 
+    // this is in wei! Not ether or $$
     uint public daily_rate;
+
     uint public minimum_lease_days = 1;
 
     // dict of yyyyddmm -> the price for that day
@@ -138,7 +140,7 @@ contract LeasableCar is Leasable {
         require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
 
         LeaseAgreement new_leaseagreement = new LeaseAgreement(
-            car, driver, _start_timestamp, _end_timestamp);
+            car, driver, _start_timestamp, _end_timestamp, daily_rate);
         lease_agreements.push(new_leaseagreement);
 
         emit LeaseAgreementCreated(new_leaseagreement);
