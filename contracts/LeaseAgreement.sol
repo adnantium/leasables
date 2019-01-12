@@ -1,6 +1,7 @@
 pragma solidity >=0.4.24 <0.6.0;
 
 import "./LeasableCar.sol";
+import "./TimeMachine.sol";
 
 contract LeaseAgreement {
 
@@ -23,6 +24,8 @@ contract LeaseAgreement {
     LeaseAgreementStates public contract_state = LeaseAgreementStates.Draft;
     uint public start_timestamp = 0;
     uint public end_timestamp = 0;
+
+    TimeMachine public time_machine;
 
     bool is_driver_signed = false;
     bool is_owner_signed = false;
@@ -71,6 +74,36 @@ contract LeaseAgreement {
         owner_deposit_required = daily_rate * 14;
 
         emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate);
+    }
+
+    function setTimeSource(address _time_machine)
+        public 
+        // onlyOwner
+    {
+        time_machine = TimeMachine(_time_machine);
+    }
+
+    function timeTillStart()
+        public
+        returns (uint time_till_start)
+    {
+        uint the_time_now = time_machine.time_now();
+        if (the_time_now > start_timestamp) {
+            return 0;
+        }        
+        return start_timestamp - the_time_now;
+    }
+
+
+    function timeTillEnd()
+        public
+        returns (uint time_till_end)
+    {
+        uint the_time_now = time_machine.time_now();
+        if (the_time_now > end_timestamp) {
+            return 0;
+        }        
+        return end_timestamp - the_time_now;
     }
 
     function driverSign() public payable {
