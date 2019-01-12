@@ -190,6 +190,11 @@ class LookupCarForm extends React.Component {
       return;
     }
 
+    this.refreshCarInfo(the_car);
+  }
+
+  async refreshCarInfo(the_car) {
+
     let car_vin = await the_car.VIN.call();
     let car_owner = await the_car.owner.call();
     let car_daily_rate_wei = await the_car.daily_rate.call();
@@ -199,7 +204,7 @@ class LookupCarForm extends React.Component {
       the_car,
       car_vin,
       car_owner,
-      car_daily_rate: car_daily_rate,
+      car_daily_rate,
      });
   }
 
@@ -261,6 +266,7 @@ class LookupCarForm extends React.Component {
     let owner_deposit_required = await lease_agreement.owner_deposit_required();
     let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
     let driver_balance = await lease_agreement.driver_balance();
+    let car_balance = await lease_agreement.car_balance();
 
     this.setState({ 
       lease_start_timestamp: ts_to_str(lease_start_timestamp),
@@ -271,7 +277,24 @@ class LookupCarForm extends React.Component {
       owner_deposit_required: weiToEther(owner_deposit_required),
       owner_deposit_amount: weiToEther(owner_deposit_amount),
       driver_balance: weiToEther(driver_balance),
+      car_balance: weiToEther(car_balance),
     });
+
+    var car_address = await lease_agreement.the_car();
+
+    let the_car;
+    try {
+      the_car = await this.state.car_contract_spec.at(car_address);
+
+      this.refreshCarInfo(the_car);
+
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        car_lookup_error: error.message,
+      })
+      return;
+    }
 
   }
 
@@ -282,9 +305,17 @@ class LookupCarForm extends React.Component {
     const account = accounts[0];
 
     const amt_wei = web3.utils.toWei('' + driver_deposit_required);
-    const tx = await lease_agreement
-      .driverSign({from: account, value: amt_wei});
-    console.log(tx);
+    try {
+      const tx = await lease_agreement
+        .driverSign({from: account, value: amt_wei});
+      console.log(tx);
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        driver_deposit_error: error.message,
+      })
+      return;
+    }
 
     let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
     let driver_balance = await lease_agreement.driver_balance();
@@ -302,9 +333,17 @@ class LookupCarForm extends React.Component {
     const account = accounts[0];
 
     const amt_wei = web3.utils.toWei('' + owner_deposit_required);
-    const tx = await lease_agreement
-      .ownerSign({from: account, value: amt_wei});
-    console.log(tx);
+    try {
+      const tx = await lease_agreement
+        .ownerSign({from: account, value: amt_wei});
+      console.log(tx);
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        owner_deposit_error: error.message,
+      })
+      return;
+    }
 
     let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
     let car_balance = await lease_agreement.car_balance();
@@ -336,6 +375,20 @@ class LookupCarForm extends React.Component {
       agreement_lookup_error_text = <small id="agreementLookupError" 
         className="form-text alert alert-warning">
         {this.state.agreement_lookup_error}</small>
+    }
+
+    let driver_deposit_error_text;
+    if (this.state.driver_deposit_error) {
+      driver_deposit_error_text = <small id="driverDepositError" 
+        className="form-text alert alert-warning">
+        {this.state.driver_deposit_error}</small>
+    }
+
+    let owner_deposit_error_text;
+    if (this.state.owner_deposit_error) {
+      owner_deposit_error_text = <small id="ownerDepositError" 
+        className="form-text alert alert-warning">
+        {this.state.owner_deposit_error}</small>
     }
 
     let account = this.state.accounts[0];
@@ -378,7 +431,7 @@ class LookupCarForm extends React.Component {
         </ul>
 
         <form onSubmit={this.handleLeaseRequest}>
-          <button type="submit" className="btn btn-primary btn-sm">Request Draft</button>
+          <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
           {agreement_request_error_text}
         </form>
 
@@ -402,18 +455,21 @@ class LookupCarForm extends React.Component {
           <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
           <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
           <li>Driver balance: {this.state.driver_balance} eth</li>
+          <li>Car balance: {this.state.car_balance} eth</li>
         </ul>
 
         <form onSubmit={this.handleDriverDepositSubmit}>
           <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
             Driver Sign+Deposit
           </button>
+          {driver_deposit_error_text}
         </form>
 
         <form onSubmit={this.handleOwnerDepositSubmit}>
           <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
             Owner Sign+Deposit
           </button>
+          {owner_deposit_error_text}
         </form>
 
       </div>
