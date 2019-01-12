@@ -275,7 +275,7 @@ class LookupCarForm extends React.Component {
 
   }
 
-  handleDepositSubmit = async (event) => {
+  handleDriverDepositSubmit = async (event) => {
     event.preventDefault();
 
     const { accounts, lease_agreement, driver_deposit_required } = this.state;
@@ -293,7 +293,26 @@ class LookupCarForm extends React.Component {
       driver_deposit_amount: weiToEther(driver_deposit_amount),
       driver_balance: weiToEther(driver_balance),
     });
-    
+  }
+
+  handleOwnerDepositSubmit = async (event) => {
+    event.preventDefault();
+
+    const { accounts, lease_agreement, owner_deposit_required } = this.state;
+    const account = accounts[0];
+
+    const amt_wei = web3.utils.toWei('' + owner_deposit_required);
+    const tx = await lease_agreement
+      .ownerSign({from: account, value: amt_wei});
+    console.log(tx);
+
+    let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
+    let car_balance = await lease_agreement.car_balance();
+
+    this.setState({
+      owner_deposit_amount: weiToEther(owner_deposit_amount),
+      car_balance: weiToEther(car_balance),
+    });    
   }
 
   render() {
@@ -320,11 +339,19 @@ class LookupCarForm extends React.Component {
     }
 
     let account = this.state.accounts[0];
-    let is_driver_or_owner;
+    let is_driver = false;
+    let is_owner = false;
+    let is_driver_or_owner = "?";
+    let driver_deposit_disabled = true;
+    let owner_deposit_disabled = true;
     if (this.state.lease_agreement) {
       if (account == this.state.lease_driver) {
+        is_driver = true;
+        driver_deposit_disabled = false;
         is_driver_or_owner = "The Driver";
       } else if (account ==  this.state.car_owner) {
+        is_owner = true;
+        owner_deposit_disabled = false;
         is_driver_or_owner = "The Car Owner";
       } else {
         is_driver_or_owner = "Not Owner or Driver!";
@@ -377,8 +404,16 @@ class LookupCarForm extends React.Component {
           <li>Driver balance: {this.state.driver_balance} eth</li>
         </ul>
 
-        <form onSubmit={this.handleDepositSubmit}>
-          <button type="submit" className="btn btn-primary btn-sm">Sign Agreement with Deposit</button>
+        <form onSubmit={this.handleDriverDepositSubmit}>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
+            Driver Sign+Deposit
+          </button>
+        </form>
+
+        <form onSubmit={this.handleOwnerDepositSubmit}>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
+            Owner Sign+Deposit
+          </button>
         </form>
 
       </div>
