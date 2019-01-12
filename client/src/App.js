@@ -19,6 +19,10 @@ function weiToEther(weis) {
   return web3.utils.fromWei(weis.toString());
 }
 
+function ts_to_str(epoch_secs_bignumber) {
+  let epoch_ms = epoch_secs_bignumber.toNumber() * 1000;
+  return new Date(epoch_ms).toLocaleString();
+}
 
 class App extends Component {
   state = { 
@@ -259,8 +263,8 @@ class LookupCarForm extends React.Component {
     let driver_balance = await lease_agreement.driver_balance();
 
     this.setState({ 
-      lease_start_timestamp: lease_start_timestamp.toNumber(),
-      lease_end_timestamp: lease_end_timestamp.toNumber(),
+      lease_start_timestamp: ts_to_str(lease_start_timestamp),
+      lease_end_timestamp: ts_to_str(lease_end_timestamp),
       lease_driver,
       driver_deposit_required: weiToEther(driver_deposit_required),
       driver_deposit_amount: weiToEther(driver_deposit_amount),
