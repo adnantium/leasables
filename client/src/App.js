@@ -230,6 +230,10 @@ class LookupCarForm extends React.Component {
     // December 9, 2018 11:59:59 AM
     var end_timestamp = 1544356799;
 
+    if (!the_car) {
+      this.setState({agreement_request_error: "Select a car!"});
+      return;
+    }
     const tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
     console.log(tx);
     let lease_agreement_address = tx.logs[0].args.contractAddress;
@@ -290,9 +294,25 @@ class LookupCarForm extends React.Component {
 
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
-    let error_text;
+    let car_lookup_error_text;
     if (this.state.car_lookup_error) {
-      error_text = <small id="carLookupError" className="form-text text-muted alert alert-warning">{this.state.car_lookup_error}</small>
+      car_lookup_error_text = <small id="carLookupError" 
+        className="form-text alert alert-warning">
+        {this.state.car_lookup_error}</small>
+    }
+
+    let agreement_request_error_text;
+    if (this.state.agreement_request_error) {
+      agreement_request_error_text = <small id="agreementRequestError" 
+        className="form-text alert alert-warning">
+        {this.state.agreement_request_error}</small>
+    }
+
+    let agreement_lookup_error_text;
+    if (this.state.agreement_lookup_error) {
+      agreement_lookup_error_text = <small id="agreementLookupError" 
+        className="form-text alert alert-warning">
+        {this.state.agreement_lookup_error}</small>
     }
 
     let account = this.state.accounts[0];
@@ -315,7 +335,7 @@ class LookupCarForm extends React.Component {
             LeasableCar Contract address:
             <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
-          {error_text}
+          {car_lookup_error_text}
           <input type="submit" value="Find it!" />
         </form>
 
@@ -328,6 +348,7 @@ class LookupCarForm extends React.Component {
 
         <form onSubmit={this.handleLeaseRequest}>
           <button type="submit" className="btn btn-primary btn-sm">Request Draft</button>
+          {agreement_request_error_text}
         </form>
 
         <form onSubmit={this.handleAgreementLookup}>
@@ -335,6 +356,7 @@ class LookupCarForm extends React.Component {
             Agreement address:
             <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
           </label>
+          {agreement_lookup_error_text}
           <input type="submit" value="Find it!" />
         </form>
 
@@ -344,11 +366,11 @@ class LookupCarForm extends React.Component {
           <li>End: {this.state.lease_end_timestamp}</li>
           <li>Driver: {this.state.lease_driver}</li>
           <li>You are: {is_driver_or_owner}</li>
-          <li>Driver deposit required: {this.state.driver_deposit_required}</li>
-          <li>Driver deposit received: {this.state.driver_deposit_amount}</li>
-          <li>Owner deposit required: {this.state.owner_deposit_required}</li>
-          <li>Owner deposit received: {this.state.owner_deposit_amount}</li>
-          <li>Driver balance: {this.state.driver_balance}</li>
+          <li>Driver deposit required: {this.state.driver_deposit_required} eth</li>
+          <li>Driver deposit received: {this.state.driver_deposit_amount} eth</li>
+          <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
+          <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
+          <li>Driver balance: {this.state.driver_balance} eth</li>
         </ul>
 
         <form onSubmit={this.handleDepositSubmit}>
