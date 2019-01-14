@@ -4,6 +4,7 @@ import "react-tabs/style/react-tabs.css";
 
 import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseAgreementContract from "./contracts/LeaseAgreement.json";
+import TimeMachineContract from "./contracts/TimeMachine.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
@@ -49,6 +50,9 @@ class App extends Component {
       var lease_agreement_spec = truffle_contract(LeaseAgreementContract);
       lease_agreement_spec.setProvider(web3.currentProvider);
 
+      var time_machine_spec = truffle_contract(TimeMachineContract);
+      time_machine_spec.setProvider(web3.currentProvider);
+
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
       this.setState({ 
@@ -57,6 +61,7 @@ class App extends Component {
         account,
         car_contract_spec,
         lease_agreement_spec,
+        time_machine_spec,
       });
       
     } catch (error) {
@@ -90,6 +95,7 @@ class App extends Component {
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
+              time_machine_spec={this.state.time_machine_spec}
               accounts={this.state.accounts} />
           </div>
         </div>
@@ -124,11 +130,24 @@ class LookupCarForm extends React.Component {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
       accounts: this.props.accounts,
+      time_machine_spec: this.props.time_machine_spec,
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
       car_lookup_error: "",
     }
+  }
+
+
+  componentDidMount = async () => {
+    var time_machine = await this.state.time_machine_spec.deployed();
+    let virtual_time = await time_machine.time_now.call();
+
+    this.setState({ 
+      time_machine,
+      virtual_time: ts_to_str(virtual_time),
+    });
+
   }
 
   handleCarLookup = async (event) => {
@@ -311,6 +330,20 @@ class LookupCarForm extends React.Component {
     });    
   }
 
+  handleTimeTravel = async (event) => {
+
+    const { time_machine } = this.state;
+
+    let account = this.state.accounts[0];
+    let hours = event.target.attributes.hours.value;
+    var tx = await time_machine.forwardHours(hours, {from: account});
+		console.log("​LookupCarForm -> handleTimeTravel -> tx", tx)
+    var new_time_secs = await this.state.time_machine.time_now.call();
+    this.setState({
+      virtual_time: ts_to_str(new_time_secs),
+    })
+  }
+
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
     let car_lookup_error_text;
@@ -416,9 +449,9 @@ class LookupCarForm extends React.Component {
     </div>
       </div>
       <div className="col-sm">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Actions</h5>
+        <div className="card">
+          <div className="card-body">
+            <h5 className="card-title">Actions</h5>
 
             <form onSubmit={this.handleLeaseRequest}>
               <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
@@ -440,6 +473,19 @@ class LookupCarForm extends React.Component {
             </form>
 
           </div>
+        </div>
+
+        <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">{this.state.virtual_time}</h5>
+              <h6 className="card-subtitle mb-2 text-muted">Time Machine</h6>
+              <button onClick={this.handleTimeTravel} hours="-24" className="badge badge-light">&lt; 1D</button>
+              <button onClick={this.handleTimeTravel} hours="-6" className="badge badge-light">&lt; 6h</button>
+              <button onClick={this.handleTimeTravel} hours="-1" className="badge badge-light">&lt; 1h</button>
+              <button onClick={this.handleTimeTravel} hours="1" className="badge badge-light">&gt; 1h</button>
+              <button onClick={this.handleTimeTravel} hours="6" className="badge badge-light">&gt; 6h</button>
+              <button onClick={this.handleTimeTravel} hours="24" className="badge badge-light">&gt; 1D</button>
+            </div>
         </div>
       </div>
     </div>
