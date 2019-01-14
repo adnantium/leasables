@@ -2,14 +2,11 @@ import React, { Component } from "react";
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import "react-tabs/style/react-tabs.css";
 
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseAgreementContract from "./contracts/LeaseAgreement.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
-import SimpleStorageWrite from "./SimpleStorageWrite";
-import SimpleStorageRead from "./SimpleStorageRead";
 
 var truffle_contract = require("truffle-contract");
 var web3 = require("web3");
@@ -28,7 +25,6 @@ class App extends Component {
   state = { 
     web3: null, 
     accounts: null, 
-    storage_contract: null,
     car_contract_spec: null,
     the_car: null,
     lease_agreement_spec: null,
@@ -45,10 +41,6 @@ class App extends Component {
       const accounts = await web3.eth.getAccounts();
       const account = accounts[0];
 
-      var storage_contract_spec = truffle_contract(SimpleStorageContract);
-      storage_contract_spec.setProvider(web3.currentProvider);
-      var storage_contract = await storage_contract_spec.deployed();
-
       // We're just going the store the 'spec' of the contract. It not a
       // particular instance of a deployed contract. Need the address to do that
       var car_contract_spec = truffle_contract(LeasableCarContract);
@@ -63,7 +55,6 @@ class App extends Component {
         web3, 
         accounts, 
         account,
-        storage_contract, 
         car_contract_spec,
         lease_agreement_spec,
       });
@@ -81,19 +72,11 @@ class App extends Component {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
 
-    let contract_status;
-    if (!this.state.storage_contract.address) {
-      contract_status = <li>Contract is not deployed!</li>
-    } else {
-      contract_status = <li>Contract deployed at: {this.state.storage_contract.address}</li>
-    }
-
     return (
       <div className="container">
       <Tabs>
         <TabList>
           <Tab>Leaser</Tab>
-          <Tab>SimpleStorage</Tab>
           <Tab>Status</Tab>
         </TabList>
 
@@ -111,31 +94,6 @@ class App extends Component {
           </div>
         </div>
         </TabPanel>
-
-        <TabPanel>
-        <div className="row">
-          <div className="col-sm-10">
-
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title">SimpleStorage.sol Demo</h5>
-                <p className="card-text">
-                  <ul>
-                    {contract_status}
-                  </ul>
-                </p>
-              </div>
-            </div>
-            <SimpleStorageWrite 
-              storage_contract={this.state.storage_contract} 
-              account={this.state.accounts[0]} />
-            <SimpleStorageRead
-              storage_contract={this.state.storage_contract} 
-              account={this.state.accounts[0]} />    
-          </div>
-        </div>
-      </TabPanel>
-
         <TabPanel>
         <div className="row">
           <div className="col-md-10">
@@ -147,7 +105,7 @@ class App extends Component {
 
           </div>
         </div>
-      </TabPanel>
+        </TabPanel>
 
       </Tabs>
       </div>
@@ -398,11 +356,11 @@ class LookupCarForm extends React.Component {
     let driver_deposit_disabled = true;
     let owner_deposit_disabled = true;
     if (this.state.lease_agreement) {
-      if (account == this.state.lease_driver) {
+      if (account === this.state.lease_driver) {
         is_driver = true;
         driver_deposit_disabled = false;
         is_driver_or_owner = "The Driver";
-      } else if (account ==  this.state.car_owner) {
+      } else if (account ===  this.state.car_owner) {
         is_owner = true;
         owner_deposit_disabled = false;
         is_driver_or_owner = "The Car Owner";
