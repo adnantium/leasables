@@ -82,7 +82,7 @@ class App extends Component {
 
         <TabPanel>
         <div className="row">
-          <div className="col-sm-10">
+          <div className="col-sm">
             <h2>Leaser</h2>
             <div className="alert alert-light" role="alert">
               Account: {this.state.account}
@@ -112,7 +112,6 @@ class App extends Component {
     );
   }
 }
-
 export default App;
 
 class LookupCarForm extends React.Component {
@@ -370,7 +369,9 @@ class LookupCarForm extends React.Component {
     }
 
     return (
-    <div className="card">
+    <div className="row">
+      <div className="col-sm">
+        <div className="card">
       <div className="card-body">
         <form onSubmit={this.handleCarLookup}>
           <label>
@@ -387,11 +388,6 @@ class LookupCarForm extends React.Component {
           <li>Owner: {this.state.car_owner}</li>
           <li>Daily Rate: {this.state.car_daily_rate}</li>
         </ul>
-
-        <form onSubmit={this.handleLeaseRequest}>
-          <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
-          {agreement_request_error_text}
-        </form>
 
         <form onSubmit={this.handleAgreementLookup}>
           <label>
@@ -416,20 +412,35 @@ class LookupCarForm extends React.Component {
           <li>Car balance: {this.state.car_balance} eth</li>
         </ul>
 
-        <form onSubmit={this.handleDriverDepositSubmit}>
-          <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
-            Driver Sign+Deposit
-          </button>
-          {driver_deposit_error_text}
-        </form>
+      </div>
+    </div>
+      </div>
+      <div className="col-sm">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Actions</h5>
 
-        <form onSubmit={this.handleOwnerDepositSubmit}>
-          <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
-            Owner Sign+Deposit
-          </button>
-          {owner_deposit_error_text}
-        </form>
+            <form onSubmit={this.handleLeaseRequest}>
+              <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
+              {agreement_request_error_text}
+            </form>
 
+            <form onSubmit={this.handleDriverDepositSubmit}>
+              <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
+                Driver Sign+Deposit
+              </button>
+              {driver_deposit_error_text}
+            </form>
+
+            <form onSubmit={this.handleOwnerDepositSubmit}>
+              <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
+                Owner Sign+Deposit
+              </button>
+              {owner_deposit_error_text}
+            </form>
+
+          </div>
+        </div>
       </div>
     </div>
     );
