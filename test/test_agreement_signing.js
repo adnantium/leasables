@@ -47,6 +47,9 @@ contract('TestSignAgreement', async function(accounts) {
     it("Checking driverSign with exact deposit amount...", async function() {
 
         const car1_agreement = await create_test_agreement(car1, driver_uid);
+
+        var agreement_state = await car1_agreement.agreement_state.call();
+        assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
             
         var deposit_required = await car1_agreement.driver_deposit_required.call();
         deposit_required = deposit_required.toNumber();
@@ -67,12 +70,18 @@ contract('TestSignAgreement', async function(accounts) {
         var driver_balance_amount = await car1_agreement.driver_balance.call();
         assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0 after exact deposit!");
 
+        var agreement_state = await car1_agreement.agreement_state.call();
+        assert.equal(agreement_state.toNumber(), 1, "Agreement should be in PartiallySigned(1) state!");
+
     });
 
     it("Checking driverSign with extra deposit amount...", async function() {
 
         const car1_agreement = await create_test_agreement(car1, driver_uid);      
-                    
+
+        var agreement_state = await car1_agreement.agreement_state.call();
+        assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
+
         var deposit_required = await car1_agreement.driver_deposit_required.call();
         deposit_required = deposit_required.toNumber();
         // putting in extra $
@@ -150,7 +159,11 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking ownerSign require() conditions...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);                          
+        const car1_agreement = await create_test_agreement(car1, driver_uid);
+
+        var agreement_state = await car1_agreement.agreement_state.call();
+        assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
+
         var deposit_required = await car1_agreement.owner_deposit_required.call();
         deposit_required = deposit_required.toNumber();
 
@@ -198,7 +211,6 @@ contract('TestSignAgreement', async function(accounts) {
 
 
     });
-
 
     it("Checking ownerSign with exact deposit amount...", async function() {
 
