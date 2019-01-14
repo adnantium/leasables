@@ -22,6 +22,10 @@ function ts_to_str(epoch_secs_bignumber) {
   return new Date(epoch_ms).toLocaleString();
 }
 
+function agreementStateToStr(state_num) {
+  const states = [ "Created", "PartiallySigned", "Approved", "InProgress", "Completed", "Finalized"];
+  return states[state_num];
+}
 class App extends Component {
   state = { 
     web3: null, 
@@ -235,6 +239,9 @@ class LookupCarForm extends React.Component {
   async refreshLeaseAgreementInfo(lease_agreement) {
     let lease_start_timestamp = await lease_agreement.start_timestamp();
     let lease_end_timestamp = await lease_agreement.end_timestamp();
+
+    let agreement_state = await lease_agreement.agreement_state();
+
     let lease_driver = await lease_agreement.the_driver();
 
     let driver_deposit_required = await lease_agreement.driver_deposit_required();
@@ -247,6 +254,7 @@ class LookupCarForm extends React.Component {
     this.setState({ 
       lease_start_timestamp: ts_to_str(lease_start_timestamp),
       lease_end_timestamp: ts_to_str(lease_end_timestamp),
+      agreement_state: agreementStateToStr(agreement_state),
       lease_driver,
       driver_deposit_required: weiToEther(driver_deposit_required),
       driver_deposit_amount: weiToEther(driver_deposit_amount),
@@ -293,13 +301,7 @@ class LookupCarForm extends React.Component {
       return;
     }
 
-    let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
-    let driver_balance = await lease_agreement.driver_balance();
-
-    this.setState({
-      driver_deposit_amount: weiToEther(driver_deposit_amount),
-      driver_balance: weiToEther(driver_balance),
-    });
+    this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
   handleOwnerDepositSubmit = async (event) => {
@@ -312,7 +314,6 @@ class LookupCarForm extends React.Component {
     try {
       const tx = await lease_agreement
         .ownerSign({from: account, value: amt_wei});
-      console.log(tx);
     } catch (error) {
       console.log(error);
       this.setState({
@@ -321,13 +322,7 @@ class LookupCarForm extends React.Component {
       return;
     }
 
-    let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
-    let car_balance = await lease_agreement.car_balance();
-
-    this.setState({
-      owner_deposit_amount: weiToEther(owner_deposit_amount),
-      car_balance: weiToEther(car_balance),
-    });    
+    this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
   handleTimeTravel = async (event) => {
@@ -432,10 +427,11 @@ class LookupCarForm extends React.Component {
         </form>
 
         <ul>
-          <li>Draft contract: {this.state.lease_agreement_address}</li>
+          <li>Agreement: {this.state.lease_agreement_address}</li>
+          <li>Driver: {this.state.lease_driver}</li>
+          <li>State: {this.state.agreement_state}</li>
           <li>Start: {this.state.lease_start_timestamp}</li>
           <li>End: {this.state.lease_end_timestamp}</li>
-          <li>Driver: {this.state.lease_driver}</li>
           <li>You are: {is_driver_or_owner}</li>
           <li>Driver deposit required: {this.state.driver_deposit_required} eth</li>
           <li>Driver deposit received: {this.state.driver_deposit_amount} eth</li>
