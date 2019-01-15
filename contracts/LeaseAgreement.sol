@@ -74,8 +74,8 @@ contract LeaseAgreement {
         // default deposit amounts:
         // driver: 4 weeks of payments
         // owner: 2 weeks
-        driver_deposit_required = daily_rate * 28;
-        owner_deposit_required = daily_rate * 14;
+        driver_deposit_required = daily_rate * 4;
+        owner_deposit_required = daily_rate * 2;
 
         emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate);
     }
