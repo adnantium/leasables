@@ -28,9 +28,13 @@ class ConnectionStatusCard extends React.Component {
           <li>Host: {cp.host}</li>
         </ul>;
       }
-      const accounts_list = this.state.accounts.map((acct) =>
-        <li>{acct}</li>
-      );
+      // const accounts_list = this.state.accounts.map((acct) =>
+      // <li>
+      //   <a href="/" onClick={this.handleAccountSwitch} acct={acct} className="badge badge-light">
+      //     {acct}
+      //   </a>
+      // </li>
+      // );
   
       return(
         <div class="card">
@@ -38,7 +42,6 @@ class ConnectionStatusCard extends React.Component {
             <h5 class="card-title">Connection Status</h5>
             <p class="card-text">
               {connection_status}
-              Accounts: <ul>{accounts_list}</ul>
             </p>
           </div>
         </div> 

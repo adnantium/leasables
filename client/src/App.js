@@ -29,7 +29,8 @@ function agreementStateToStr(state_num) {
 class App extends Component {
   state = { 
     web3: null, 
-    accounts: null, 
+    all_accounts: null, 
+    account: null, 
     car_contract_spec: null,
     the_car: null,
     lease_agreement_spec: null,
@@ -43,8 +44,16 @@ class App extends Component {
 
       // Use web3 to get the user's accounts.
       // We'll need this to make a call to the contract
-      const accounts = await web3.eth.getAccounts();
-      const account = accounts[0];
+      const all_accounts = await web3.eth.getAccounts();
+
+      const stored_acct = localStorage.getItem('account');
+      let account;
+      if (all_accounts.indexOf(stored_acct) >= 0) {
+        account = stored_acct;
+      } else {
+        account = all_accounts[0]
+        localStorage.setItem('account', account);
+      }
 
       // We're just going the store the 'spec' of the contract. It not a
       // particular instance of a deployed contract. Need the address to do that
@@ -61,7 +70,7 @@ class App extends Component {
       // components can access it
       this.setState({ 
         web3, 
-        accounts, 
+        all_accounts, 
         account,
         car_contract_spec,
         lease_agreement_spec,
@@ -76,10 +85,32 @@ class App extends Component {
     }
   };
 
+
+  handleAccountSwitch = (event) => {
+    event.preventDefault();
+
+    let acct = event.target.attributes.acct.value;
+		console.log("​App -> handleAccountSwitch -> acct", acct)
+
+    localStorage.setItem('account', acct);
+    this.setState({
+      account: acct,
+    })
+  }
+
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
+
+    const accounts_list = this.state.all_accounts.map((acct) =>
+    <li>
+      <a href="/" onClick={this.handleAccountSwitch} acct={acct} className="badge badge-light">
+        {acct}
+      </a>
+    </li>
+    );
+
 
     return (
       <div className="container">
@@ -100,7 +131,7 @@ class App extends Component {
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
               time_machine_spec={this.state.time_machine_spec}
-              accounts={this.state.accounts} />
+              account={this.state.account} />
           </div>
         </div>
         </TabPanel>
@@ -109,9 +140,18 @@ class App extends Component {
           <div className="col-md-10">
 
           <ConnectionStatusCard 
-            accounts={this.state.accounts}
+            all_accounts={this.state.all_accounts}
             web3={this.state.web3}
           />
+
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Accounts</h5>
+              <p class="card-text">
+                <ul>{accounts_list}</ul>
+              </p>
+            </div>
+          </div> 
 
           </div>
         </div>
@@ -133,7 +173,8 @@ class LookupCarForm extends React.Component {
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
-      accounts: this.props.accounts,
+      // all_accounts: this.props.all_accounts,
+      account: this.props.account,
       time_machine_spec: this.props.time_machine_spec,
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
@@ -211,8 +252,7 @@ class LookupCarForm extends React.Component {
   handleLeaseRequest = async (event) => {
     event.preventDefault();
 
-    const { accounts, the_car, lease_agreement_spec } = this.state;
-    const account = accounts[0];
+    const { account, the_car, lease_agreement_spec } = this.state;
 
     // December 3, 2018 12:00:00 PM
     var start_timestamp = 1543838400;
@@ -285,8 +325,7 @@ class LookupCarForm extends React.Component {
   handleDriverDepositSubmit = async (event) => {
     event.preventDefault();
 
-    const { accounts, lease_agreement, driver_deposit_required } = this.state;
-    const account = accounts[0];
+    const { account, lease_agreement, driver_deposit_required } = this.state;
 
     const amt_wei = web3.utils.toWei('' + driver_deposit_required);
     try {
@@ -307,8 +346,7 @@ class LookupCarForm extends React.Component {
   handleOwnerDepositSubmit = async (event) => {
     event.preventDefault();
 
-    const { accounts, lease_agreement, owner_deposit_required } = this.state;
-    const account = accounts[0];
+    const { account, lease_agreement, owner_deposit_required } = this.state;
 
     const amt_wei = web3.utils.toWei('' + owner_deposit_required);
     try {
@@ -327,9 +365,8 @@ class LookupCarForm extends React.Component {
 
   handleTimeTravel = async (event) => {
 
-    const { time_machine } = this.state;
+    const { time_machine, account } = this.state;
 
-    let account = this.state.accounts[0];
     let hours = event.target.attributes.hours.value;
     var tx = await time_machine.forwardHours(hours, {from: account});
 		console.log("​LookupCarForm -> handleTimeTravel -> tx", tx)
@@ -344,12 +381,12 @@ class LookupCarForm extends React.Component {
   handleDriverPickupSubmit = async (event) => {
     event.preventDefault();
 
-    const { accounts, lease_agreement, driver_deposit_required } = this.state;
-    const account = accounts[0];
+    const { account, lease_agreement, driver_deposit_required } = this.state;
 
+    const amt_wei = web3.utils.toWei('0.1');
     try {
       const tx = await lease_agreement
-        .driverPickup({from: account, value: 1});
+        .driverPickup({from: account, value: amt_wei});
       console.log(tx);
     } catch (error) {
       console.log(error);
@@ -378,7 +415,7 @@ class LookupCarForm extends React.Component {
         {this.state.action_error}</small>
     }
 
-    let account = this.state.accounts[0];
+    let account = this.state.account;
     let is_driver = false;
     let is_owner = false;
     let is_driver_or_owner = "?";
