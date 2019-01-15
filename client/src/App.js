@@ -165,7 +165,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        car_lookup_error: error.message,
+        lookup_error: error.message,
       })
       return;
     }
@@ -204,7 +204,7 @@ class LookupCarForm extends React.Component {
       this.refreshLeaseAgreementInfo(lease_agreement);
 
     } catch (error) {
-      this.setState({agreement_lookup_error: error.message})
+      this.setState({lookup_error: error.message})
     }
   }
 
@@ -275,7 +275,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        car_lookup_error: error.message,
+        lookup_error: error.message,
       })
       return;
     }
@@ -296,7 +296,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        driver_deposit_error: error.message,
+        action_error: error.message,
       })
       return;
     }
@@ -317,7 +317,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        owner_deposit_error: error.message,
+        action_error: error.message,
       })
       return;
     }
@@ -339,41 +339,43 @@ class LookupCarForm extends React.Component {
     })
   }
 
+
+  // pickup -> pay $ 1st payment
+  handleDriverPickupSubmit = async (event) => {
+    event.preventDefault();
+
+    const { accounts, lease_agreement, driver_deposit_required } = this.state;
+    const account = accounts[0];
+
+    try {
+      const tx = await lease_agreement
+        .driverPickup({from: account, value: 1});
+      console.log(tx);
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
+    this.refreshLeaseAgreementInfo(lease_agreement);
+  }
+
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
-    let car_lookup_error_text;
-    if (this.state.car_lookup_error) {
-      car_lookup_error_text = <small id="carLookupError" 
+
+    let lookup_error_text;
+    if (this.state.lookup_error) {
+      lookup_error_text = <small id="lookupError" 
         className="form-text alert alert-warning">
-        {this.state.car_lookup_error}</small>
+        {this.state.lookup_error}</small>
     }
 
-    let agreement_request_error_text;
-    if (this.state.agreement_request_error) {
-      agreement_request_error_text = <small id="agreementRequestError" 
+    let action_error_text;
+    if (this.state.action_error) {
+      action_error_text = <small id="actionError" 
         className="form-text alert alert-warning">
-        {this.state.agreement_request_error}</small>
-    }
-
-    let agreement_lookup_error_text;
-    if (this.state.agreement_lookup_error) {
-      agreement_lookup_error_text = <small id="agreementLookupError" 
-        className="form-text alert alert-warning">
-        {this.state.agreement_lookup_error}</small>
-    }
-
-    let driver_deposit_error_text;
-    if (this.state.driver_deposit_error) {
-      driver_deposit_error_text = <small id="driverDepositError" 
-        className="form-text alert alert-warning">
-        {this.state.driver_deposit_error}</small>
-    }
-
-    let owner_deposit_error_text;
-    if (this.state.owner_deposit_error) {
-      owner_deposit_error_text = <small id="ownerDepositError" 
-        className="form-text alert alert-warning">
-        {this.state.owner_deposit_error}</small>
+        {this.state.action_error}</small>
     }
 
     let account = this.state.accounts[0];
@@ -396,9 +398,19 @@ class LookupCarForm extends React.Component {
       }
     }
 
+    let pickup_disabled = this.state.agreement_state == "Approved" ? false : true;
+    // var start_timestamp = await lease_agreement.start_timestamp();
+    // await time_machine.time_now.call();
+    // if after picktime and agreement.state != started
+    // 1] get currnt time from TimeMachine
+    // 2] get pickup time from agreement
+    // 3] get start time from agreement
+
+
     return (
     <div className="row">
       <div className="col-sm">
+        {lookup_error_text}
         <div className="card">
       <div className="card-body">
         <form onSubmit={this.handleCarLookup}>
@@ -406,7 +418,6 @@ class LookupCarForm extends React.Component {
             LeasableCar Contract address:
             <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
-          {car_lookup_error_text}
           <input type="submit" value="Find it!" />
         </form>
 
@@ -422,7 +433,6 @@ class LookupCarForm extends React.Component {
             Agreement address:
             <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
           </label>
-          {agreement_lookup_error_text}
           <input type="submit" value="Find it!" />
         </form>
 
@@ -445,28 +455,45 @@ class LookupCarForm extends React.Component {
     </div>
       </div>
       <div className="col-sm">
+      {action_error_text}
         <div className="card">
           <div className="card-body">
             <h5 className="card-title">Actions</h5>
 
             <form onSubmit={this.handleLeaseRequest}>
               <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
-              {agreement_request_error_text}
             </form>
 
             <form onSubmit={this.handleDriverDepositSubmit}>
               <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
                 Driver Sign+Deposit
               </button>
-              {driver_deposit_error_text}
             </form>
 
             <form onSubmit={this.handleOwnerDepositSubmit}>
               <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
                 Owner Sign+Deposit
               </button>
-              {owner_deposit_error_text}
             </form>
+
+
+            <form onSubmit={this.handleDriverPickupSubmit}>
+              <button type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
+                Pickup &amp; Start
+              </button>
+            </form>
+
+            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
+                Make Payment
+            </button>
+
+            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
+                Process Cycle
+            </button>
+
+            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
+                Make Payment
+            </button>
 
           </div>
         </div>
