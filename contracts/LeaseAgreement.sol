@@ -185,4 +185,13 @@ contract LeaseAgreement {
         emit AgreementStarted(the_car, the_driver);
 
     }
+
+    function make_payment() public payable {
+        require(msg.sender == the_driver, "Only the driver can pickuo!");
+        require(agreement_state == LeaseAgreementStates.Approved, "Agreement has not been fully approved!");
+
+        driver_balance += msg.value;
+        
+        emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+    }
 }

@@ -86,13 +86,19 @@ contract('TestDriverPayments', async function(accounts) {
         var driver_balance_amount = await agreement.driver_balance();
         assert.equal(driver_balance_amount.toString(), "0", "Driver balance amount should be 0 after exact deposit!");
 
-        // var payment_amount = web3.utils.toWei(2+'');
-        // tx = await agreement.make_payment({
-        //     from: driver_uid,
-        //     value: payment_amount,
-        //     gas: g, gasPrice: gp,
-        // });
-        // console.log("​tx", tx)
+        var payment_amount = web3.utils.toWei(2+'');
+        tx = await agreement.make_payment({
+            from: driver_uid,
+            value: payment_amount,
+            gas: g, gasPrice: gp,
+        });
+        assert.equal(tx.logs[0].event, "DriverBalanceUpdated", "DriverBalanceUpdated event not emitted!")
+        assert.equal(tx.logs[0].args.new_balance.toString(), web3.utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
+
+        var driver_balance_amount = await agreement.driver_balance();
+        assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should be 2 after 2 payment!");
+
+
     });
 
     // it("Checking driverSign ...", async function() {
