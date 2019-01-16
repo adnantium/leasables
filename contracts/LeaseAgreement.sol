@@ -112,6 +112,13 @@ contract LeaseAgreement {
         return end_timestamp - the_time_now;
     }
 
+    function contract_balance() 
+        public view 
+        returns (uint the_balance)
+    {
+        return address(this).balance;
+    }
+
     function driverSign() public payable {
         require(msg.sender == the_driver, "Only driver can sign agreement!");
         require(is_driver_signed == false, "Agreement has already been signed by driver");

@@ -48,8 +48,9 @@ contract('TestAgreementTiming', async function(accounts) {
 
 
     before(async function() {
+        var daily_rate = web3.utils.toWei(1.5+'');
         car1 = await LeasableCarArtifact
-            .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 10, 
+            .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', daily_rate, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
         );
         car1_uid = car1.address
@@ -79,7 +80,7 @@ contract('TestAgreementTiming', async function(accounts) {
         assert.equal(agreement_state.toNumber(), 1, "Agreement should be in PartiallySigned(1) state!");
 
         var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
-        assert.equal(driver_deposit_amount.toNumber(), driver_deposit_required.toNumber(), "Driver depoist amount is not right!");
+        assert.equal(driver_deposit_amount.toString(), driver_deposit_required.toString(), "Driver depoist amount is not right!");
 
 
 
