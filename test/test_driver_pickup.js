@@ -49,7 +49,7 @@ contract('TestAgreementTiming', async function(accounts) {
 
     before(async function() {
         car1 = await LeasableCarArtifact
-            .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 99, 
+            .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 10, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
         );
         car1_uid = car1.address
@@ -60,6 +60,7 @@ contract('TestAgreementTiming', async function(accounts) {
         var tx;
         var time_out_ms;
         var time_till_start;
+        var error_caught;
 
         // its dec_3_2018_12noon
         const tm = await TimeMachineArtifact.new(dec_3_2018_12noon, acct_gas);
@@ -71,18 +72,22 @@ contract('TestAgreementTiming', async function(accounts) {
 
         // driver sign + deposit
         var driver_deposit_required = await car1_agreement.driver_deposit_required.call();
-        var tx = await car1_agreement.
+        tx = await car1_agreement.
             driverSign({from: driver_uid, value: driver_deposit_required});
 
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 1, "Agreement should be in PartiallySigned(1) state!");
 
+        var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
+        assert.equal(driver_deposit_amount.toNumber(), driver_deposit_required.toNumber(), "Driver depoist amount is not right!");
+
+
+
         
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         // should fail since owner has not signed even though its pickup time
         try {
-            var tx = await car1_agreement.
-                driverPickup({from: driver_uid, value: 0});
+            tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
         } catch(error) {
             error_caught = true;
         }
@@ -90,34 +95,34 @@ contract('TestAgreementTiming', async function(accounts) {
 
         // owner sign + deposit
         var owner_deposit_required = await car1_agreement.owner_deposit_required.call();
-        var tx = await car1_agreement.
-            ownerSign({from: car_owner_uid, value: owner_deposit_required});
+        tx = await car1_agreement.ownerSign({from: car_owner_uid, value: owner_deposit_required});
 
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 2, "Agreement should be in Approved(2) state!");
-                
+
+        
+        
         // driver pickup
 
         // should fail since its still not time yet
         tx = await tm.setNow(dec_3_2018_12noon, acct_gas);
         try {
-            var tx = await car1_agreement.
-                driverPickup({from: driver_uid, value: 0});
+            tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
         } catch(error) {
             error_caught = true;
         }
         assert.ok(error_caught === true, "Should not be able to pickup before its time!")
     
+        // now its pickup time
         tx = await await tm.setNow(dec_4_2018_12noon, acct_gas);
-        var tx = await car1_agreement.
-            driverPickup({from: driver_uid, value: 0});
+        tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
+        assert.equal(tx.logs[0].event, "AgreementStarted", "AgreementStarted event not emitted!")
         
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 3, "Agreement should be in InProgress(3) state!");
         
         var pickup_time = await car1_agreement.pickup_time.call();
-        assert.equal(pickup_time.toNumber(), dec_4_2018_12noon, "Pickup time is wrong!");
-
+        assert.equal(pickup_time.toNumber(), dec_4_2018_12noon, "Pickup time is wrong!");        
     });
 
     // it("Checking driverSign ...", async function() {

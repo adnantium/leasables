@@ -89,6 +89,7 @@ contract LeaseAgreement {
 
     function timeTillStart()
         public
+        view
         returns (uint time_till_start)
     {
         uint the_time_now = time_machine.time_now();
@@ -101,6 +102,7 @@ contract LeaseAgreement {
 
     function timeTillEnd()
         public
+        view
         returns (uint time_till_end)
     {
         uint the_time_now = time_machine.time_now();
@@ -173,5 +175,7 @@ contract LeaseAgreement {
 
         // change agrement state -> Started
         agreement_state = LeaseAgreementStates.InProgress;
+        emit AgreementStarted(the_car, the_driver);
+
     }
 }
