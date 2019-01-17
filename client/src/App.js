@@ -8,6 +8,7 @@ import TimeMachineContract from "./contracts/TimeMachine.json";
 import getWeb3 from "./utils/getWeb3";
 
 import ConnectionStatusCard from "./ConnectionStatus";
+import AccountsSwitcherCard from "./AccountsSwitcher";
 
 var truffle_contract = require("truffle-contract");
 var web3 = require("web3");
@@ -28,13 +29,6 @@ function agreementStateToStr(state_num) {
   return states[state_num];
 }
 
-function shrinkAddress(full_address) {
-  const a = full_address.slice(0, 10);
-  const b = '..';
-  const c = full_address.slice(-10);
-
-  return a + b + c;
-}
 
 class App extends Component {
   state = { 
@@ -95,32 +89,10 @@ class App extends Component {
     }
   };
 
-
-  handleAccountSwitch = (event) => {
-    event.preventDefault();
-
-    let acct = event.target.attributes.acct.value;
-		console.log("​App -> handleAccountSwitch -> acct", acct)
-
-    localStorage.setItem('account', acct);
-    this.setState({
-      account: acct,
-    })
-  }
-
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
-
-    const accounts_list = this.state.all_accounts.map((acct) =>
-    <li>
-      <a href="/" onClick={this.handleAccountSwitch} acct={acct} className="badge badge-light">
-              {shrinkAddress(acct)}
-      </a>
-    </li>
-    );
-
 
     return (
       <div className="container">
@@ -154,14 +126,9 @@ class App extends Component {
             web3={this.state.web3}
           />
 
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Accounts</h5>
-              <p class="card-text">
-                <ul>{accounts_list}</ul>
-              </p>
-            </div>
-          </div> 
+          <AccountsSwitcherCard
+            all_accounts={this.state.all_accounts}
+          />
 
           </div>
         </div>
@@ -462,7 +429,7 @@ class LookupCarForm extends React.Component {
       <div className="card-body">
         <form onSubmit={this.handleCarLookup}>
           <label>
-            LeasableCar Contract address:
+            Agreement:
             <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
           <input type="submit" value="Find it!" />
