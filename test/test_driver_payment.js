@@ -87,7 +87,7 @@ contract('TestDriverPayments', async function(accounts) {
         assert.equal(driver_balance_amount.toString(), "0", "Driver balance amount should be 0 after exact deposit!");
 
         var payment_amount = web3.utils.toWei(2+'');
-        tx = await agreement.make_payment({
+        tx = await agreement.driverPayment({
             from: driver_uid,
             value: payment_amount,
             gas: g, gasPrice: gp,

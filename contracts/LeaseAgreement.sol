@@ -29,11 +29,14 @@ contract LeaseAgreement {
     bool is_driver_signed = false;
     bool is_owner_signed = false;
 
+    bool driver_access_enabled = false;
+
     bool is_started = false;
     bool is_ended = false;
 
     // add these balances and amounts are in wei!
     uint256 public daily_rate;
+    uint public wei_per_sec;
 
     uint256 public driver_deposit_required;
     uint256 public driver_deposit_amount = 0;
@@ -42,18 +45,36 @@ contract LeaseAgreement {
     uint256 public owner_deposit_amount = 0;
 
     uint256 public driver_balance = 0;
+    uint256 public driver_over_balance = 0;
     uint256 public car_balance = 0;
 
     uint public pickup_time = 0;
     uint public return_time = 0;
 
+    uint public last_cycle_time = 0;
+
+    // Agreement state transition events
     event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp, uint256 daily_rate);
     event DriverSigned(address the_car, address the_driver, uint256 deposit_amount);
-    event DriverBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     event OwnerSigned(address the_car, address the_driver, uint256 deposit_amount);
-    event CarBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     event AgreementApproved(address the_car, address the_driver);
     event AgreementStarted(address the_car, address the_driver);
+    event AgreementCompleted(address the_car, address the_driver);
+    event AgreementFinalized(address the_car, address the_driver);
+
+    // balance update events
+    event DriverBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
+    event DriverBalanceLow(address the_car, address the_driver, uint256 the_balance, uint balance_needed);
+    event DriverOverBalance(address the_car, address the_driver, uint256 the_over_balance);
+    event CarBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
+    event CycleProcessed(address the_car, address the_driver, uint start_time, uint end_time, uint256 cycle_cost);
+
+    // External (physical) events
+    event CarReturned(address the_car, address the_driver, uint256 the_time);
+    event DriverAccessEnabled(address the_car, address the_driver, uint256 the_time);
+    event DriverAccessDisabled(address the_car, address the_driver, uint256 the_time);
+    event DriverAccessFailure(address the_car, address the_driver, uint256 the_time);
+
     
     constructor (
         address _car, 
@@ -71,6 +92,9 @@ contract LeaseAgreement {
         end_timestamp = _end_timestamp;
         daily_rate = _daily_rate;
 
+        // 86400 secs in 1 day
+        wei_per_sec = daily_rate/86400;
+
         // default deposit amounts:
         // driver: 4 weeks of payments
         // owner: 2 weeks
@@ -80,17 +104,12 @@ contract LeaseAgreement {
         emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate);
     }
 
-    function setTimeSource(address _time_machine)
-        public 
-        // onlyOwner
+    function setTimeSource(address _time_machine) public 
     {
         time_machine = TimeMachine(_time_machine);
     }
 
-    function timeTillStart()
-        public
-        view
-        returns (uint time_till_start)
+    function timeTillStart() public view returns (uint time_till_start)
     {
         uint the_time_now = time_machine.time_now();
         if (the_time_now > start_timestamp) {
@@ -110,6 +129,15 @@ contract LeaseAgreement {
             return 0;
         }        
         return end_timestamp - the_time_now;
+    }
+
+    function getCarOwner() 
+        public 
+        returns (address the_owner)
+    {
+        LeasableCar car_contract = LeasableCar(the_car);
+        address car_owner = car_contract.owner();
+        return car_owner;
     }
 
     function contract_balance() 
@@ -144,8 +172,7 @@ contract LeaseAgreement {
 
     function ownerSign() public payable {
 
-        LeasableCar car_contract = LeasableCar(the_car);
-        address car_owner = car_contract.owner();
+        address car_owner = getCarOwner();
 
         require(msg.sender == car_owner, "Only owner can sign agreement!");
         require(is_owner_signed == false, "Agreement has already been signed by owner");
@@ -178,20 +205,135 @@ contract LeaseAgreement {
         require(timeTillStart() == 0, "Agreement is not ready to start yet");
         // require: car location is right (?)
 
-        pickup_time = time_machine.time_now();
+        uint time_now = time_machine.time_now();
+        pickup_time = time_now;
+        last_cycle_time = pickup_time;
 
         // change agrement state -> Started
         agreement_state = LeaseAgreementStates.InProgress;
         emit AgreementStarted(the_car, the_driver);
 
+        bool was_enabled = enableDriverAccess();
+        if (was_enabled == false) {
+            emit DriverAccessFailure(the_car, the_driver, time_now);
+        } else {
+            driver_access_enabled = true;
+        }
     }
 
-    function make_payment() public payable {
-        require(msg.sender == the_driver, "Only the driver can pickuo!");
-        require(agreement_state == LeaseAgreementStates.Approved, "Agreement has not been fully approved!");
+    function driverPayment() public payable {
+        require(msg.sender == the_driver, "Only the driver can make payment!");
+        // require(agreement_state == LeaseAgreementStates.PartiallySigned, "Agreement has not been full signed yet!");
 
         driver_balance += msg.value;
         
         emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+    }
+
+    function processRebalance(uint cost_of_this_cycle) 
+        internal 
+        returns (uint remaining_balance_due)
+    {
+
+        // move $ from driver balance to car's balance
+        if (cost_of_this_cycle > driver_balance) {
+            emit DriverBalanceLow(the_car, the_driver, driver_balance, cost_of_this_cycle);
+
+            // take all money from driver's balance
+            car_balance += driver_balance;
+            uint still_due = cost_of_this_cycle - driver_balance;
+            driver_balance = 0;
+
+            // take remaining money needed from the driver's deposit
+            if (still_due > driver_deposit_amount) {
+                car_balance += driver_deposit_amount;
+                still_due = still_due - driver_deposit_amount;
+                driver_deposit_amount = 0;
+                driver_over_balance = still_due;
+                emit DriverOverBalance(the_car, the_driver, driver_over_balance);
+            }
+            return still_due;
+
+        } else {
+
+            driver_balance -= cost_of_this_cycle;
+            emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+
+            car_balance += cost_of_this_cycle;
+            emit CarBalanceUpdated(the_car, the_driver, driver_balance);
+
+            return 0;
+        }
+    }
+
+    function processCycle() 
+        public 
+        returns (uint cycle_cost)
+    {
+        address car_owner = getCarOwner();
+
+        require(
+            msg.sender == the_driver || msg.sender == the_car || msg.sender == car_owner, 
+            "Only the driver, the car or its owner can run a cycle!");
+
+        uint time_now = time_machine.time_now();
+        // calculate how long (secs) its been since last cycle
+        uint since_last_cycle = time_now - last_cycle_time;
+        require(since_last_cycle > 3600, "Too soon to run a cycle. Can only be run once per hour");
+
+        uint cost_of_this_cycle = since_last_cycle * wei_per_sec;
+
+        uint still_due = processRebalance(cost_of_this_cycle);
+        driver_over_balance = still_due;
+
+        emit CycleProcessed(the_car, the_driver, last_cycle_time, time_now, cost_of_this_cycle);
+        last_cycle_time = time_now;
+
+        return cost_of_this_cycle;
+    }
+
+    function driverReturn() public { 
+        require(msg.sender == the_driver, "Only the driver can do return!");
+
+        uint time_now = time_machine.time_now();
+        uint since_last_cycle = time_now - last_cycle_time;
+
+        uint cost_of_this_cycle = since_last_cycle * wei_per_sec;
+
+        uint still_due = processRebalance(cost_of_this_cycle);
+
+        last_cycle_time = time_now;
+        driver_over_balance = still_due;
+
+        bool was_disabled = disableDriverAccess();
+        if (was_disabled == false) {
+            emit DriverAccessFailure(the_car, the_driver, time_now);
+        } else {
+            driver_access_enabled = true;
+        }
+    }
+
+    function disableDriverAccess() 
+        private 
+        returns (bool was_disabled)
+    {
+        uint time_now = time_machine.time_now();
+        // TODO: call an oracle to handle this
+
+        emit DriverAccessDisabled(the_car, the_driver, time_now);
+
+        return true;
+    }
+
+    function enableDriverAccess() 
+        private 
+        returns (bool was_enabled)
+    {
+        uint time_now = time_machine.time_now();
+        // TODO: call an oracle to handle this
+
+        emit DriverAccessEnabled(the_car, the_driver, time_now);
+
+        return true;
     }
 }

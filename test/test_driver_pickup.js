@@ -115,7 +115,7 @@ contract('TestAgreementTiming', async function(accounts) {
         assert.ok(error_caught === true, "Should not be able to pickup before its time!")
     
         // now its pickup time
-        tx = await await tm.setNow(dec_4_2018_12noon, acct_gas);
+        tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
         assert.equal(tx.logs[0].event, "AgreementStarted", "AgreementStarted event not emitted!")
         
