@@ -23,9 +23,19 @@ function ts_to_str(epoch_secs_bignumber) {
 }
 
 function agreementStateToStr(state_num) {
-  const states = [ "Created", "PartiallySigned", "Approved", "InProgress", "Completed", "Finalized"];
+  const states = [ "Created", "PartiallySigned", "Approved", 
+    "InProgress", "Completed", "Finalized"];
   return states[state_num];
 }
+
+function shrinkAddress(full_address) {
+  const a = full_address.slice(0, 10);
+  const b = '..';
+  const c = full_address.slice(-10);
+
+  return a + b + c;
+}
+
 class App extends Component {
   state = { 
     web3: null, 
@@ -106,7 +116,7 @@ class App extends Component {
     const accounts_list = this.state.all_accounts.map((acct) =>
     <li>
       <a href="/" onClick={this.handleAccountSwitch} acct={acct} className="badge badge-light">
-        {acct}
+              {shrinkAddress(acct)}
       </a>
     </li>
     );
