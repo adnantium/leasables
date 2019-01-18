@@ -156,7 +156,6 @@ class LookupCarForm extends React.Component {
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
-      car_lookup_error: "",
     }
   }
 
@@ -230,6 +229,7 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
 
     const { account, the_car, lease_agreement_spec } = this.state;
+    var tx;
 
     // December 3, 2018 12:00:00 PM
     var start_timestamp = 1543838400;
@@ -237,14 +237,33 @@ class LookupCarForm extends React.Component {
     var end_timestamp = 1544356799;
 
     if (!the_car) {
-      this.setState({agreement_request_error: "Select a car!"});
+      this.setState({action_error: "Select a car!"});
       return;
     }
-    const tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
-    console.log(tx);
-    let lease_agreement_address = tx.logs[0].args.contractAddress;
+    var lease_agreement_address;
+    try {
+      tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
+      console.log(tx);
+      lease_agreement_address = tx.logs[0].args.contractAddress;
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
 
-    let lease_agreement = await lease_agreement_spec.at(lease_agreement_address);
+    const lease_agreement = await lease_agreement_spec.at(lease_agreement_address);
+
+    try {
+      tx = await lease_agreement.setTimeSource(this.state.time_machine.address, { from: account });
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
 
     this.setState({ 
       lease_agreement,
@@ -359,8 +378,9 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
 
     const { account, lease_agreement, driver_deposit_required } = this.state;
-
+    
     const amt_wei = web3.utils.toWei('0.1');
+		// console.log("​LookupCarForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
     try {
       const tx = await lease_agreement
         .driverPickup({from: account, value: amt_wei});
@@ -424,19 +444,21 @@ class LookupCarForm extends React.Component {
     return (
     <div className="row">
       <div className="col-sm">
-        {lookup_error_text}
         <div className="card">
       <div className="card-body">
+
+        {lookup_error_text}
+
         <form onSubmit={this.handleCarLookup}>
           <label>
-            Agreement:
+            Car:
             <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
           </label>
           <input type="submit" value="Find it!" />
         </form>
 
         <ul>
-          <li>Address: {car_address}</li>
+          <li>Car: {car_address}</li>
           <li>VIN: {this.state.car_vin}</li>
           <li>Owner: {this.state.car_owner}</li>
           <li>Daily Rate: {this.state.car_daily_rate}</li>
@@ -474,41 +496,28 @@ class LookupCarForm extends React.Component {
           <div className="card-body">
             <h5 className="card-title">Actions</h5>
 
-            <form onSubmit={this.handleLeaseRequest}>
-              <button type="submit" className="btn btn-primary btn-sm">Request New Agreement</button>
-            </form>
-
-            <form onSubmit={this.handleDriverDepositSubmit}>
-              <button type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
-                Driver Sign+Deposit
-              </button>
-            </form>
-
-            <form onSubmit={this.handleOwnerDepositSubmit}>
-              <button type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
-                Owner Sign+Deposit
-              </button>
-            </form>
-
-
-            <form onSubmit={this.handleDriverPickupSubmit}>
-              <button type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
-                Pickup &amp; Start
-              </button>
-            </form>
-
-            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
-                Make Payment
-            </button>
-
-            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
-                Process Cycle
-            </button>
-
-            <button type="submit" className="btn btn-primary btn-sm" disabled="true">
-                Make Payment
-            </button>
-
+            <ul>
+              <li>
+            <a href="/" onClick={this.handleLeaseRequest} className="badge badge-light">
+              Request Lease
+            </a>
+              </li>
+              <li>
+            <a href="/" onClick={this.handleDriverDepositSubmit} className="badge badge-light">
+              Driver Sign+Deposit
+            </a>
+              </li>
+              <li>
+            <a href="/" onClick={this.handleOwnerDepositSubmit} className="badge badge-light">
+              Owner Sign+Deposit
+            </a>
+              </li>
+              <li>
+            <a href="/" onClick={this.handleDriverPickupSubmit} className="badge badge-light">
+              Pickup
+            </a>
+              </li>
+            </ul>
           </div>
         </div>
 
