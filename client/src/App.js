@@ -163,9 +163,11 @@ class LookupCarForm extends React.Component {
   componentDidMount = async () => {
     var time_machine = await this.state.time_machine_spec.deployed();
     let virtual_time = await time_machine.time_now.call();
+    var time_machine_owner = await time_machine.owner();
 
     this.setState({ 
       time_machine,
+      time_machine_owner,
       virtual_time: ts_to_str(virtual_time),
     });
 
@@ -361,19 +363,33 @@ class LookupCarForm extends React.Component {
 
   handleTimeTravel = async (event) => {
 
-    const { time_machine, account } = this.state;
+    const { time_machine, time_machine_owner, account } = this.state;
 
     let hours = event.target.attributes.hours.value;
-    var tx = await time_machine.forwardHours(hours, {from: account});
-		console.log("​LookupCarForm -> handleTimeTravel -> tx", tx)
+
+    if (time_machine_owner != account) {
+      this.setState({
+        action_error: "Only time machine owner (" + time_machine_owner + ") can mess with the time!",
+      })
+      return;
+    }
+    try {
+      var tx = await time_machine.forwardHours(hours, {from: account});
+      console.log("​LookupCarForm -> handleTimeTravel -> tx", tx)
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
     var new_time_secs = await this.state.time_machine.time_now.call();
     this.setState({
       virtual_time: ts_to_str(new_time_secs),
     })
   }
 
-
-  // pickup -> pay $ 1st payment
+  // pickup
   handleDriverPickupSubmit = async (event) => {
     event.preventDefault();
 
@@ -383,7 +399,7 @@ class LookupCarForm extends React.Component {
 		// console.log("​LookupCarForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
     try {
       const tx = await lease_agreement
-        .driverPickup({from: account, value: amt_wei});
+        .driverPickup({from: account});
       console.log(tx);
     } catch (error) {
       console.log(error);
