@@ -279,7 +279,7 @@ contract LeaseAgreement {
         uint time_now = time_machine.time_now();
         // calculate how long (secs) its been since last cycle
         uint since_last_cycle = time_now - last_cycle_time;
-        require(since_last_cycle > 3600, "Too soon to run a cycle. Can only be run once per hour");
+        require(since_last_cycle >= 3599, "Too soon to run a cycle. Can only be run once per hour");
 
         uint cost_of_this_cycle = since_last_cycle * wei_per_sec;
 

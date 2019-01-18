@@ -175,6 +175,7 @@ class LookupCarForm extends React.Component {
 
   handleCarLookup = async (event) => {
     event.preventDefault();
+    this.setState({lookup_error: null})
 
     var car_address = this.car_address_input.current.value;
 
@@ -209,6 +210,7 @@ class LookupCarForm extends React.Component {
 
   handleAgreementLookup = async (event) => {
     event.preventDefault();
+    this.setState({lookup_error: null})
     var agreement_address = this.agreement_address_input.current.value;
 
     const { lease_agreement_spec } = this.state;
@@ -229,6 +231,7 @@ class LookupCarForm extends React.Component {
 
   handleLeaseRequest = async (event) => {
     event.preventDefault();
+    this.setState({action_error: null})
 
     const { account, the_car, lease_agreement_spec } = this.state;
     var tx;
@@ -339,6 +342,7 @@ class LookupCarForm extends React.Component {
 
   handleDriverDepositSubmit = async (event) => {
     event.preventDefault();
+    this.setState({action_error: null})
 
     const { account, lease_agreement, driver_deposit_required } = this.state;
 
@@ -360,6 +364,7 @@ class LookupCarForm extends React.Component {
 
   handleOwnerDepositSubmit = async (event) => {
     event.preventDefault();
+    this.setState({action_error: null})
 
     const { account, lease_agreement, owner_deposit_required } = this.state;
 
@@ -380,6 +385,7 @@ class LookupCarForm extends React.Component {
   }
 
   handleTimeTravel = async (event) => {
+    this.setState({action_error: null})
 
     const { time_machine, time_machine_owner, account } = this.state;
 
@@ -410,6 +416,7 @@ class LookupCarForm extends React.Component {
   // pickup
   handleDriverPickupSubmit = async (event) => {
     event.preventDefault();
+    this.setState({action_error: null})
 
     const { account, lease_agreement, driver_deposit_required } = this.state;
     
@@ -432,6 +439,7 @@ class LookupCarForm extends React.Component {
 
   handlePayment = async (event) => {
     event.preventDefault();
+    this.setState({action_error: null})
 
     const { account, lease_agreement } = this.state;
     let amount = event.currentTarget.attributes.amount.value;
@@ -439,6 +447,28 @@ class LookupCarForm extends React.Component {
     try {
       const tx = await lease_agreement
         .driverPayment({from: account, value: amt_wei});
+      console.log(tx);
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
+
+    this.refreshLeaseAgreementInfo(lease_agreement);
+  }
+
+
+  handleProcessCycle = async (event) => {
+    event.preventDefault();
+    this.setState({action_error: null})
+
+    const { account, lease_agreement } = this.state;
+
+    try {
+      const tx = await lease_agreement
+        .processCycle({from: account});
       console.log(tx);
     } catch (error) {
       console.log(error);
@@ -610,7 +640,7 @@ class LookupCarForm extends React.Component {
               </li>
 
               <li>
-              <button onClick={this.handle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
+              <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
                 Process Cycle
               </button>
               </li>
