@@ -26,13 +26,13 @@ contract LeaseAgreement {
 
     TimeMachine public time_machine;
 
-    bool is_driver_signed = false;
-    bool is_owner_signed = false;
+    bool public is_driver_signed = false;
+    bool public is_owner_signed = false;
 
-    bool driver_access_enabled = false;
+    bool public driver_access_enabled = false;
 
-    bool is_started = false;
-    bool is_ended = false;
+    bool public is_started = false;
+    bool public is_ended = false;
 
     // add these balances and amounts are in wei!
     uint256 public daily_rate;

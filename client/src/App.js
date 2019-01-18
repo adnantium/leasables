@@ -275,46 +275,63 @@ class LookupCarForm extends React.Component {
   }
 
   async refreshLeaseAgreementInfo(lease_agreement) {
-    let lease_start_timestamp = await lease_agreement.start_timestamp();
-    let lease_end_timestamp = await lease_agreement.end_timestamp();
-
-    let agreement_state = await lease_agreement.agreement_state();
-
-    let lease_driver = await lease_agreement.the_driver();
-
-    let driver_deposit_required = await lease_agreement.driver_deposit_required();
-    let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
-    let owner_deposit_required = await lease_agreement.owner_deposit_required();
-    let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
-    let driver_balance = await lease_agreement.driver_balance();
-    let car_balance = await lease_agreement.car_balance();
-
-    this.setState({ 
-      lease_start_timestamp: ts_to_str(lease_start_timestamp),
-      lease_end_timestamp: ts_to_str(lease_end_timestamp),
-      agreement_state: agreementStateToStr(agreement_state),
-      lease_driver,
-      driver_deposit_required: weiToEther(driver_deposit_required),
-      driver_deposit_amount: weiToEther(driver_deposit_amount),
-      owner_deposit_required: weiToEther(owner_deposit_required),
-      owner_deposit_amount: weiToEther(owner_deposit_amount),
-      driver_balance: weiToEther(driver_balance),
-      car_balance: weiToEther(car_balance),
-    });
-
-    var car_address = await lease_agreement.the_car();
-
-    let the_car;
     try {
-      the_car = await this.state.car_contract_spec.at(car_address);
+      let lease_start_timestamp = await lease_agreement.start_timestamp();
+      let lease_end_timestamp = await lease_agreement.end_timestamp();
 
-      this.refreshCarInfo(the_car);
+      let agreement_state = await lease_agreement.agreement_state();
 
+      let lease_driver = await lease_agreement.the_driver();
+
+      let driver_deposit_required = await lease_agreement.driver_deposit_required();
+      let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
+      let owner_deposit_required = await lease_agreement.owner_deposit_required();
+      let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
+      let driver_balance = await lease_agreement.driver_balance();
+      let driver_over_balance = await lease_agreement.driver_over_balance();
+      let car_balance = await lease_agreement.car_balance();
+      // let is_started = await lease_agreement.is_started();
+      // let is_ended = await lease_agreement.is_ended();
+      let daily_rate = await lease_agreement.daily_rate();
+      let pickup_time = await lease_agreement.pickup_time();
+      let return_time = await lease_agreement.return_time();
+      let last_cycle_time = await lease_agreement.last_cycle_time();
+      let contract_creator = await lease_agreement.contract_creator();
+
+      this.setState({ 
+        lease_start_timestamp: ts_to_str(lease_start_timestamp),
+        lease_end_timestamp: ts_to_str(lease_end_timestamp),
+        agreement_state: agreementStateToStr(agreement_state),
+        lease_driver,
+        driver_deposit_required: weiToEther(driver_deposit_required),
+        driver_deposit_amount: weiToEther(driver_deposit_amount),
+        owner_deposit_required: weiToEther(owner_deposit_required),
+        owner_deposit_amount: weiToEther(owner_deposit_amount),
+        driver_balance: weiToEther(driver_balance),
+        driver_over_balance: weiToEther(driver_over_balance),
+        car_balance: weiToEther(car_balance),
+        // is_started: ts_to_str(is_started),
+        // is_ended: ts_to_str(is_ended),
+        daily_rate: weiToEther(daily_rate),
+        pickup_time: ts_to_str(pickup_time),
+        return_time: ts_to_str(return_time),
+        last_cycle_time: ts_to_str(last_cycle_time),
+        contract_creator,
+      });
     } catch (error) {
       console.log(error)
-      this.setState({
-        lookup_error: error.message,
-      })
+      this.setState({ lookup_error: error.message, })
+      return;
+    }
+
+    try {
+      var car_address = await lease_agreement.the_car();
+      let the_car = await this.state.car_contract_spec.at(car_address);
+
+      this.refreshCarInfo(the_car);
+    } catch (error) {
+      console.log(error)
+      this.setState({ lookup_error: error.message, })
       return;
     }
 
@@ -399,7 +416,7 @@ class LookupCarForm extends React.Component {
 		// console.log("​LookupCarForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
     try {
       const tx = await lease_agreement
-        .driverPickup({from: account});
+        .driverPickup({from: account, value: amt_wei});
       console.log(tx);
     } catch (error) {
       console.log(error);
@@ -500,7 +517,16 @@ class LookupCarForm extends React.Component {
           <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
           <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
           <li>Driver balance: {this.state.driver_balance} eth</li>
+          <li>Driver over balance: {this.state.driver_over_balance} eth</li>
           <li>Car balance: {this.state.car_balance} eth</li>
+          <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
+          <li>Is started: {this.state.is_started}</li>
+          <li>Is ended: {this.state.is_ended}</li>
+          <li>Daily rate: {this.state.daily_rate}</li>
+          <li>Picked up time: {this.state.pickup_time}</li>
+          <li>Returned time: {this.state.return_time}</li>
+          <li>Last cycle run: {this.state.last_cycle_time}</li>
+          <li>Contract creator: {this.state.contract_creator}</li>
         </ul>
 
       </div>
