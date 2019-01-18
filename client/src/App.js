@@ -367,6 +367,7 @@ class LookupCarForm extends React.Component {
     try {
       const tx = await lease_agreement
         .ownerSign({from: account, value: amt_wei});
+        console.log("​LookupCarForm -> handleOwnerDepositSubmit -> tx", tx)
     } catch (error) {
       console.log(error);
       this.setState({
@@ -384,7 +385,7 @@ class LookupCarForm extends React.Component {
 
     let hours = event.target.attributes.hours.value;
 
-    if (time_machine_owner != account) {
+    if (time_machine_owner !== account) {
       this.setState({
         action_error: "Only time machine owner (" + time_machine_owner + ") can mess with the time!",
       })
@@ -428,6 +429,28 @@ class LookupCarForm extends React.Component {
     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
+
+  handlePayment = async (event) => {
+    event.preventDefault();
+
+    const { account, lease_agreement } = this.state;
+    let amount = event.currentTarget.attributes.amount.value;
+    const amt_wei = web3.utils.toWei('' + amount);
+    try {
+      const tx = await lease_agreement
+        .driverPayment({from: account, value: amt_wei});
+      console.log(tx);
+    } catch (error) {
+      console.log(error);
+      this.setState({
+        action_error: error.message,
+      })
+      return;
+    }
+
+    this.refreshLeaseAgreementInfo(lease_agreement);
+  }
+
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
 
@@ -446,26 +469,40 @@ class LookupCarForm extends React.Component {
     }
 
     let account = this.state.account;
+    let agreement_state = this.state.agreement_state;
+
     let is_driver = false;
     let is_owner = false;
     let is_driver_or_owner = "?";
+
     let driver_deposit_disabled = true;
     let owner_deposit_disabled = true;
+    let lease_request_disabled = false;
+    let payment_disabled = false;
+
     if (this.state.lease_agreement) {
       if (account === this.state.lease_driver) {
         is_driver = true;
-        driver_deposit_disabled = false;
+        if (agreement_state === "Created" || agreement_state === "PartiallySigned") {
+          driver_deposit_disabled = false;
+        }
         is_driver_or_owner = "The Driver";
       } else if (account ===  this.state.car_owner) {
         is_owner = true;
-        owner_deposit_disabled = false;
+        if (agreement_state === "Created" || agreement_state === "PartiallySigned") {
+          owner_deposit_disabled = false;
+        }
         is_driver_or_owner = "The Car Owner";
       } else {
         is_driver_or_owner = "Not Owner or Driver!";
       }
     }
 
-    let pickup_disabled = this.state.agreement_state == "Approved" ? false : true;
+    let pickup_disabled = agreement_state === "Approved" ? false : true;
+    // let payment_disabled = (agreement_state === "Approved" ? false : true;
+    let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
+
+
     // var start_timestamp = await lease_agreement.start_timestamp();
     // await time_machine.time_now.call();
     // if after picktime and agreement.state != started
@@ -540,25 +577,44 @@ class LookupCarForm extends React.Component {
 
             <ul>
               <li>
-            <a href="/" onClick={this.handleLeaseRequest} className="badge badge-light">
-              Request Lease
-            </a>
+              <button onClick={this.handleLeaseRequest} type="submit" className="btn btn-primary btn-sm" disabled={lease_request_disabled}>
+                Request Lease
+              </button>
               </li>
               <li>
-            <a href="/" onClick={this.handleDriverDepositSubmit} className="badge badge-light">
-              Driver Sign+Deposit
-            </a>
+              <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
+                Driver Sign+Deposit
+              </button>
               </li>
               <li>
-            <a href="/" onClick={this.handleOwnerDepositSubmit} className="badge badge-light">
-              Owner Sign+Deposit
-            </a>
+              <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
+                Owner Sign+Deposit
+              </button>
               </li>
               <li>
-            <a href="/" onClick={this.handleDriverPickupSubmit} className="badge badge-light">
-              Pickup
-            </a>
+              <button onClick={this.handleDriverPickupSubmit} type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
+                Driver Pickup
+              </button>
               </li>
+
+              <li>
+              <button onClick={this.handlePayment} amount="0.5" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                Pay 0.5
+              </button>
+              <button onClick={this.handlePayment} amount="1" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                Pay 1
+              </button>
+              <button onClick={this.handlePayment} amount="2" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                Pay 2
+              </button>
+              </li>
+
+              <li>
+              <button onClick={this.handle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
+                Process Cycle
+              </button>
+              </li>
+
             </ul>
           </div>
         </div>
