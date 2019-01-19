@@ -29,6 +29,10 @@ function agreementStateToStr(state_num) {
   return states[state_num];
 }
 
+function format_error_message(msg) {
+  const e = 'Error: Error:';
+  return msg.indexOf(e) > 0 ? msg.slice(msg.lastIndexOf('Error')) : msg;
+}
 
 class App extends Component {
   state = { 
@@ -185,7 +189,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        lookup_error: error.message,
+        lookup_error: format_error_message(error.message),
       })
       return;
     }
@@ -253,7 +257,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -265,7 +269,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error)
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -354,7 +358,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -376,7 +380,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -403,7 +407,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -429,7 +433,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -451,7 +455,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -473,7 +477,7 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       console.log(error);
       this.setState({
-        action_error: error.message,
+        action_error: format_error_message(error.message),
       })
       return;
     }
@@ -511,6 +515,7 @@ class LookupCarForm extends React.Component {
     let payment_disabled = false;
 
     if (this.state.lease_agreement) {
+      lease_request_disabled = true;
       if (account === this.state.lease_driver) {
         is_driver = true;
         if (agreement_state === "Created" || agreement_state === "PartiallySigned") {
@@ -529,10 +534,9 @@ class LookupCarForm extends React.Component {
     }
 
     let pickup_disabled = agreement_state === "Approved" ? false : true;
-    // let payment_disabled = (agreement_state === "Approved" ? false : true;
     let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
 
-
+    
     // var start_timestamp = await lease_agreement.start_timestamp();
     // await time_machine.time_now.call();
     // if after picktime and agreement.state != started
