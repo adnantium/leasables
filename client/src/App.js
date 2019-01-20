@@ -121,6 +121,9 @@ class App extends Component {
 
     return (
       <div className="container">
+            <h6 className="text-muted text-right">
+              Hello {this.state.account}
+            </h6>
       <Tabs>
         <TabList>
           <Tab>Leaser</Tab>
@@ -130,10 +133,6 @@ class App extends Component {
         <TabPanel>
         <div className="row">
           <div className="col-sm">
-            <h2>Leaser</h2>
-            <div className="alert alert-light" role="alert">
-              Account: {this.state.account}
-            </div>
             <LookupCarForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
@@ -523,8 +522,89 @@ class LookupCarForm extends React.Component {
     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
+  car_card(car_address) {
+
+    var car_subtitle = car_address ?
+      <h6 className="card-subtitle mb-2 text-muted">{car_address}</h6> :
+      <h6 className="card-subtitle mb-2 text-muted">Lookup a car...</h6>;
+    var car_details = car_address ?
+      <ul>
+        <li>VIN: {this.state.car_vin}</li>
+        <li>Owner: {this.state.car_owner}</li>
+        <li>Daily Rate: {this.state.car_daily_rate}</li>
+      </ul> :
+      <div>
+        <form onSubmit={this.handleCarLookup}>
+          <label>
+            <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
+          </label>
+          <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
+        </form>
+      </div>
+  
+    return (
+    <div className="card">
+      <div className="card-body">
+        <h5 className="card-title">Car</h5>
+          {car_subtitle}
+          {car_details}
+      </div>
+    </div>
+    );
+  }
+
+  agreement_card(agreement_address, is_driver_or_owner) {
+
+    var agreement_subtitle = agreement_address ?
+      <h6 className="card-subtitle mb-2 text-muted">{agreement_address}</h6> :
+      <h6 className="card-subtitle mb-2 text-muted">Lookup an agreement...</h6>;
+    var agreement_details = agreement_address ?
+      <ul>
+        <li>Driver: {this.state.lease_driver}</li>
+        <li>State: {this.state.agreement_state}</li>
+        <li>Start: {this.state.lease_start_timestamp}</li>
+        <li>End: {this.state.lease_end_timestamp}</li>
+        <li>You are: {is_driver_or_owner}</li>
+        <li>Driver deposit required: {this.state.driver_deposit_required} eth</li>
+        <li>Driver deposit received: {this.state.driver_deposit_amount} eth</li>
+        <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
+        <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
+        <li>Driver balance: {this.state.driver_balance} eth</li>
+        <li>Driver over balance: {this.state.driver_over_balance} eth</li>
+        <li>Car balance: {this.state.car_balance} eth</li>
+        <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
+        <li>Is started: {this.state.is_started}</li>
+        <li>Is ended: {this.state.is_ended}</li>
+        <li>Daily rate: {this.state.daily_rate}</li>
+        <li>Picked up time: {this.state.pickup_time}</li>
+        <li>Returned time: {this.state.return_time}</li>
+        <li>Last cycle run: {this.state.last_cycle_time}</li>
+        <li>Contract creator: {this.state.contract_creator}</li>
+      </ul>
+      :
+      <div>
+        <form onSubmit={this.handleAgreementLookup}>
+          <label>
+            <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
+          </label>
+          <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
+        </form>
+      </div>
+  
+    return (
+      <div className="card">
+        <div className="card-body">
+          <h5 className="card-title">Lease Agreement</h5>
+            {agreement_subtitle}
+            {agreement_details}
+        </div>
+      </div>
+    );
+  }
+
   render() {
     let car_address = this.state.the_car ? this.state.the_car.address : "";
+    let agreement_address = this.state.lease_agreement_address ? this.state.lease_agreement_address : "";
 
     let lookup_error_text;
     if (this.state.lookup_error) {
@@ -600,53 +680,25 @@ class LookupCarForm extends React.Component {
           </li>
     );
 
-    return (
+      return (
     <div className="row">
       <div className="col-sm">
-        <div className="card">
-      <div className="card-body">
 
         {lookup_error_text}
 
-        <ul>
-          <li>Car: {car_address}</li>
-          <li>VIN: {this.state.car_vin}</li>
-          <li>Owner: {this.state.car_owner}</li>
-          <li>Daily Rate: {this.state.car_daily_rate}</li>
-        </ul>
+        {this.car_card(car_address)}
 
-        <ul>
-          <li>Agreement: {this.state.lease_agreement_address}</li>
-          <li>Driver: {this.state.lease_driver}</li>
-          <li>State: {this.state.agreement_state}</li>
-          <li>Start: {this.state.lease_start_timestamp}</li>
-          <li>End: {this.state.lease_end_timestamp}</li>
-          <li>You are: {is_driver_or_owner}</li>
-          <li>Driver deposit required: {this.state.driver_deposit_required} eth</li>
-          <li>Driver deposit received: {this.state.driver_deposit_amount} eth</li>
-          <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
-          <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
-          <li>Driver balance: {this.state.driver_balance} eth</li>
-          <li>Driver over balance: {this.state.driver_over_balance} eth</li>
-          <li>Car balance: {this.state.car_balance} eth</li>
-          <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
-          <li>Is started: {this.state.is_started}</li>
-          <li>Is ended: {this.state.is_ended}</li>
-          <li>Daily rate: {this.state.daily_rate}</li>
-          <li>Picked up time: {this.state.pickup_time}</li>
-          <li>Returned time: {this.state.return_time}</li>
-          <li>Last cycle run: {this.state.last_cycle_time}</li>
-          <li>Contract creator: {this.state.contract_creator}</li>
-        </ul>
+        {this.agreement_card(agreement_address, is_driver_or_owner)}
 
       </div>
-    </div>
-      </div>
+
       <div className="col-sm">
       {action_error_text}
+      <div className="row">
+        <div className="col-sm">
         <div className="card">
           <div className="card-body">
-            <h5 className="card-title">Actions</h5>
+            <h6 className="card-subtitle mb-2 text-muted">Driver Actions</h6>
 
             <ul>
               <li>
@@ -657,11 +709,6 @@ class LookupCarForm extends React.Component {
               <li>
               <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
                 Driver Sign+Deposit
-              </button>
-              </li>
-              <li>
-              <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
-                Owner Sign+Deposit
               </button>
               </li>
               <li>
@@ -681,16 +728,31 @@ class LookupCarForm extends React.Component {
                 Pay 2
               </button>
               </li>
+            </ul>
+          </div>
+        </div>
+        </div>
+        <div className="col-sm">
+        <div className="card">
+          <div className="card-body">
+            <h6 className="card-subtitle mb-2 text-muted">Owner Actions</h6>
 
+            <ul>
+              <li>
+              <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
+                Owner Sign+Deposit
+              </button>
+              </li>
               <li>
               <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
                 Process Cycle
               </button>
               </li>
-
             </ul>
           </div>
         </div>
+        </div>
+      </div>
 
         <div className="card">
             <div className="card-body">
@@ -708,22 +770,6 @@ class LookupCarForm extends React.Component {
         <div className="card">
             <div className="card-body">
             <h5 className="card-title">Lookup Cars &amp; Lease Agreements</h5>
-
-            <form onSubmit={this.handleCarLookup}>
-              <label>
-                Car:
-                <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
-              </label>
-              <input type="submit" value="Find it!" />
-            </form>
-
-            <form onSubmit={this.handleAgreementLookup}>
-              <label>
-                Agreement:
-                <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
-              </label>
-              <input type="submit" value="Find it!" />
-            </form>
 
               <h6 className="card-subtitle mb-2 text-muted">Recent Cars</h6>
               <ul>{known_cars_list}</ul>
