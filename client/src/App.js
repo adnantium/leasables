@@ -170,6 +170,7 @@ class LookupCarForm extends React.Component {
   constructor(props) {
     super(props);
     this.handleCarLookup = this.handleCarLookup.bind(this);
+    this.handleAgreementLookup = this.handleAgreementLookup.bind(this);
     this.car_address_input = React.createRef();
     this.agreement_address_input = React.createRef();
     this.state = {
@@ -240,8 +241,8 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
     this.setState({lookup_error: null})
 
-    var agreement_address = event.currentTarget.attributes.address_id ?
-      event.currentTarget.attributes.address_id.value :
+    var agreement_address = event.currentTarget.attributes.agreement_id ?
+      event.currentTarget.attributes.agreement_id.value :
       this.agreement_address_input.current.value;
 
     const { lease_agreement_spec } = this.state;
@@ -607,28 +608,12 @@ class LookupCarForm extends React.Component {
 
         {lookup_error_text}
 
-        <form onSubmit={this.handleCarLookup}>
-          <label>
-            Car:
-            <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
-          </label>
-          <input type="submit" value="Find it!" />
-        </form>
-
         <ul>
           <li>Car: {car_address}</li>
           <li>VIN: {this.state.car_vin}</li>
           <li>Owner: {this.state.car_owner}</li>
           <li>Daily Rate: {this.state.car_daily_rate}</li>
         </ul>
-
-        <form onSubmit={this.handleAgreementLookup}>
-          <label>
-            Agreement address:
-            <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
-          </label>
-          <input type="submit" value="Find it!" />
-        </form>
 
         <ul>
           <li>Agreement: {this.state.lease_agreement_address}</li>
@@ -722,10 +707,28 @@ class LookupCarForm extends React.Component {
 
         <div className="card">
             <div className="card-body">
-              <h5 className="card-title">Recent Cars</h5>
+            <h5 className="card-title">Lookup Cars &amp; Lease Agreements</h5>
+
+            <form onSubmit={this.handleCarLookup}>
+              <label>
+                Car:
+                <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
+              </label>
+              <input type="submit" value="Find it!" />
+            </form>
+
+            <form onSubmit={this.handleAgreementLookup}>
+              <label>
+                Agreement:
+                <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
+              </label>
+              <input type="submit" value="Find it!" />
+            </form>
+
+              <h6 className="card-subtitle mb-2 text-muted">Recent Cars</h6>
               <ul>{known_cars_list}</ul>
 
-              <h5 className="card-title">Recent Agreements</h5>
+              <h6 className="card-subtitle mb-2 text-muted">Recent Agreements</h6>
               <ul>{known_agreements_list}</ul>
 
             </div>
