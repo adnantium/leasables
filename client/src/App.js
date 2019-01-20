@@ -200,7 +200,11 @@ class LookupCarForm extends React.Component {
 
   handleCarLookup = async (event) => {
     event.preventDefault();
-    this.setState({lookup_error: null})
+    this.setState({
+      lookup_error: null,
+      the_car: null,
+      lease_agreement: null,
+    });
 
     var car_address = event.currentTarget.attributes.car_id ?
       event.currentTarget.attributes.car_id.value :
@@ -238,7 +242,11 @@ class LookupCarForm extends React.Component {
 
   handleAgreementLookup = async (event) => {
     event.preventDefault();
-    this.setState({lookup_error: null})
+    this.setState({
+      lookup_error: null,
+      the_car: null,
+      lease_agreement: null,
+    });
 
     var agreement_address = event.currentTarget.attributes.agreement_id ?
       event.currentTarget.attributes.agreement_id.value :
@@ -252,7 +260,7 @@ class LookupCarForm extends React.Component {
 
       this.setState({ 
         lease_agreement,
-        lease_agreement_address: agreement_address,
+        agreement_address: agreement_address,
       });    
       this.refreshLeaseAgreementInfo(lease_agreement);
 
@@ -277,11 +285,11 @@ class LookupCarForm extends React.Component {
       this.setState({action_error: "Select a car!"});
       return;
     }
-    var lease_agreement_address;
+    var agreement_address;
     try {
       tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
       console.log(tx);
-      lease_agreement_address = tx.logs[0].args.contractAddress;
+      agreement_address = tx.logs[0].args.contractAddress;
     } catch (error) {
       console.log(error)
       this.setState({
@@ -290,7 +298,7 @@ class LookupCarForm extends React.Component {
       return;
     }
 
-    const lease_agreement = await lease_agreement_spec.at(lease_agreement_address);
+    const lease_agreement = await lease_agreement_spec.at(agreement_address);
 
     try {
       tx = await lease_agreement.setTimeSource(this.state.time_machine.address, { from: account });
@@ -304,7 +312,7 @@ class LookupCarForm extends React.Component {
 
     this.setState({ 
       lease_agreement,
-      lease_agreement_address,
+      agreement_address,
      });
      this.refreshLeaseAgreementInfo(lease_agreement);
   }
@@ -522,7 +530,10 @@ class LookupCarForm extends React.Component {
     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
-  car_card(car_address) {
+  car_card() {
+
+    let car_address = this.state.the_car 
+      ? this.state.the_car.address : "";
 
     var car_subtitle = car_address ?
       <h6 className="card-subtitle mb-2 text-muted">{car_address}</h6> :
@@ -553,7 +564,10 @@ class LookupCarForm extends React.Component {
     );
   }
 
-  agreement_card(agreement_address, is_driver_or_owner) {
+  agreement_card(is_driver_or_owner) {
+
+    let agreement_address = this.state.agreement_address 
+      ? this.state.agreement_address : "";
 
     var agreement_subtitle = agreement_address ?
       <h6 className="card-subtitle mb-2 text-muted">{agreement_address}</h6> :
@@ -603,8 +617,6 @@ class LookupCarForm extends React.Component {
   }
 
   render() {
-    let car_address = this.state.the_car ? this.state.the_car.address : "";
-    let agreement_address = this.state.lease_agreement_address ? this.state.lease_agreement_address : "";
 
     let lookup_error_text;
     if (this.state.lookup_error) {
@@ -686,9 +698,9 @@ class LookupCarForm extends React.Component {
 
         {lookup_error_text}
 
-        {this.car_card(car_address)}
+        {this.car_card()}
 
-        {this.agreement_card(agreement_address, is_driver_or_owner)}
+        {this.agreement_card(is_driver_or_owner)}
 
       </div>
 
