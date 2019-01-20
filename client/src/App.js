@@ -34,6 +34,16 @@ function format_error_message(msg) {
   return msg.indexOf(e) > 0 ? msg.slice(msg.lastIndexOf('Error')) : msg;
 }
 
+function update_known_list(list_name, address) {
+    // add the address to known_cars list if not there
+    var list = JSON.parse(localStorage.getItem(list_name));
+    list = list ? list : [];
+    if (list.indexOf(address) === -1) {
+      list.push(address);
+    }
+    localStorage.setItem(list_name, JSON.stringify(list));
+}
+
 class App extends Component {
   state = { 
     web3: null, 
@@ -181,7 +191,10 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
     this.setState({lookup_error: null})
 
-    var car_address = this.car_address_input.current.value;
+    // var car_address = this.car_address_input.current.value;
+    var car_address = event.currentTarget.attributes.car_id ?
+      event.currentTarget.attributes.car_id.value :
+      this.car_address_input.current.value;
 
     let the_car;
     try {
@@ -198,6 +211,8 @@ class LookupCarForm extends React.Component {
   }
 
   async refreshCarInfo(the_car) {
+
+    update_known_list('known_cars', the_car.address);
 
     let car_vin = await the_car.VIN.call();
     let car_owner = await the_car.owner.call();
@@ -537,12 +552,18 @@ class LookupCarForm extends React.Component {
     let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
 
     
-    // var start_timestamp = await lease_agreement.start_timestamp();
-    // await time_machine.time_now.call();
-    // if after picktime and agreement.state != started
-    // 1] get currnt time from TimeMachine
-    // 2] get pickup time from agreement
-    // 3] get start time from agreement
+    var known_cars = JSON.parse(localStorage.getItem("known_cars"));
+    known_cars = known_cars ? known_cars : [];
+    const known_cars_list = known_cars.map((car_id) =>
+          <li>
+            <a href="/" onClick={this.handleCarLookup} car_id={car_id} className="badge badge-light">
+              {car_id}
+            </a>
+            <a href="/" onClick={this.handleRemoveFromList} address={car_id} list_name="known_cars" className="badge badge-light">
+              X
+            </a>
+          </li>
+    );
 
 
     return (
@@ -665,6 +686,16 @@ class LookupCarForm extends React.Component {
               <button onClick={this.handleTimeTravel} hours="24" className="badge badge-light">&gt; 1D</button>
             </div>
         </div>
+
+        <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Recent Cars</h5>
+
+              <ul>{known_cars_list}</ul>
+
+            </div>
+        </div>
+
       </div>
     </div>
     );
