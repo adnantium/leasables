@@ -202,7 +202,6 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
     this.setState({lookup_error: null})
 
-    // var car_address = this.car_address_input.current.value;
     var car_address = event.currentTarget.attributes.car_id ?
       event.currentTarget.attributes.car_id.value :
       this.car_address_input.current.value;
@@ -210,6 +209,7 @@ class LookupCarForm extends React.Component {
     let the_car;
     try {
       the_car = await this.state.car_contract_spec.at(car_address);
+      update_known_list('known_cars', the_car.address);
     } catch (error) {
       console.log(error)
       this.setState({
@@ -222,8 +222,6 @@ class LookupCarForm extends React.Component {
   }
 
   async refreshCarInfo(the_car) {
-
-    update_known_list('known_cars', the_car.address);
 
     let car_vin = await the_car.VIN.call();
     let car_owner = await the_car.owner.call();
@@ -241,12 +239,16 @@ class LookupCarForm extends React.Component {
   handleAgreementLookup = async (event) => {
     event.preventDefault();
     this.setState({lookup_error: null})
-    var agreement_address = this.agreement_address_input.current.value;
+
+    var agreement_address = event.currentTarget.attributes.address_id ?
+      event.currentTarget.attributes.address_id.value :
+      this.agreement_address_input.current.value;
 
     const { lease_agreement_spec } = this.state;
 
     try {
       let lease_agreement = await lease_agreement_spec.at(agreement_address);
+      update_known_list('known_agreements', lease_agreement.address);
 
       this.setState({ 
         lease_agreement,
@@ -584,6 +586,18 @@ class LookupCarForm extends React.Component {
           </li>
     );
 
+    var known_agreements = JSON.parse(localStorage.getItem("known_agreements"));
+    known_agreements = known_agreements ? known_agreements : [];
+    const known_agreements_list = known_agreements.map((agreement_id) =>
+          <li>
+            <a href="/" onClick={this.handleAgreementLookup} agreement_id={agreement_id} className="badge badge-light">
+              {agreement_id}
+            </a>
+            <a href="/" onClick={this.handleRemoveFromList} address={agreement_id} list_name="known_agreements" className="badge badge-danger">
+              X
+            </a>
+          </li>
+    );
 
     return (
     <div className="row">
@@ -709,8 +723,10 @@ class LookupCarForm extends React.Component {
         <div className="card">
             <div className="card-body">
               <h5 className="card-title">Recent Cars</h5>
-
               <ul>{known_cars_list}</ul>
+
+              <h5 className="card-title">Recent Agreements</h5>
+              <ul>{known_agreements_list}</ul>
 
             </div>
         </div>
