@@ -44,6 +44,17 @@ function update_known_list(list_name, address) {
     localStorage.setItem(list_name, JSON.stringify(list));
 }
 
+function remove_from_known_list(list_name, address) {
+  // add the address to known_cars list if not there
+  var stored_list = JSON.parse(localStorage.getItem(list_name));
+  if (stored_list) {
+    var filtered_list = stored_list.filter(function(value, index, arr){
+      return value !== address;
+    });    
+    localStorage.setItem(list_name, JSON.stringify(filtered_list));
+  }
+}
+
 class App extends Component {
   state = { 
     web3: null, 
@@ -432,6 +443,15 @@ class LookupCarForm extends React.Component {
     })
   }
 
+  handleRemoveFromList = async (event) => {
+
+    // const { time_machine, time_machine_owner, account } = this.state;
+
+    let address = event.target.attributes.address.value;
+    let list_name = event.target.attributes.list_name.value;
+    remove_from_known_list(list_name, address);
+  }
+
   // pickup
   handleDriverPickupSubmit = async (event) => {
     event.preventDefault();
@@ -551,7 +571,6 @@ class LookupCarForm extends React.Component {
     let pickup_disabled = agreement_state === "Approved" ? false : true;
     let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
 
-    
     var known_cars = JSON.parse(localStorage.getItem("known_cars"));
     known_cars = known_cars ? known_cars : [];
     const known_cars_list = known_cars.map((car_id) =>
@@ -559,7 +578,7 @@ class LookupCarForm extends React.Component {
             <a href="/" onClick={this.handleCarLookup} car_id={car_id} className="badge badge-light">
               {car_id}
             </a>
-            <a href="/" onClick={this.handleRemoveFromList} address={car_id} list_name="known_cars" className="badge badge-light">
+            <a href="/" onClick={this.handleRemoveFromList} address={car_id} list_name="known_cars" className="badge badge-danger">
               X
             </a>
           </li>
