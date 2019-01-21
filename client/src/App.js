@@ -1,6 +1,10 @@
 import React, { Component } from "react";
+
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import "react-tabs/style/react-tabs.css";
+
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseAgreementContract from "./contracts/LeaseAgreement.json";
@@ -168,10 +172,16 @@ export default App;
 class LookupCarForm extends React.Component {
   constructor(props) {
     super(props);
+
     this.handleCarLookup = this.handleCarLookup.bind(this);
-    this.handleAgreementLookup = this.handleAgreementLookup.bind(this);
     this.car_address_input = React.createRef();
+
+    this.handleAgreementLookup = this.handleAgreementLookup.bind(this);
     this.agreement_address_input = React.createRef();
+
+    this.handleStartDateChange = this.handleStartDateChange.bind(this);
+    this.handleEndDateChange = this.handleEndDateChange.bind(this);
+
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
@@ -276,10 +286,13 @@ class LookupCarForm extends React.Component {
     const { account, the_car, lease_agreement_spec } = this.state;
     var tx;
 
-    // December 3, 2018 12:00:00 PM
-    var start_timestamp = 1543838400;
-    // December 9, 2018 11:59:59 AM
-    var end_timestamp = 1544356799;
+    const { requested_end_date, requested_start_date} = this.state;
+    if (!requested_start_date || !requested_end_date) {
+      this.setState({action_error: "Select a lease start & end date!"});
+      return;
+    }
+    var start_timestamp = Math.round(requested_start_date.getTime() / 1000);
+    var end_timestamp = Math.round(requested_end_date.getTime() / 1000);
 
     if (!the_car) {
       this.setState({action_error: "Select a car!"});
@@ -297,7 +310,7 @@ class LookupCarForm extends React.Component {
       })
       return;
     }
-
+    update_known_list("known_agreements", agreement_address);
     const lease_agreement = await lease_agreement_spec.at(agreement_address);
 
     try {
@@ -530,6 +543,22 @@ class LookupCarForm extends React.Component {
     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
+  handleStartDateChange(date) {
+		console.log("​LookupCarForm -> handleStartDateChange -> date", date)
+    
+    this.setState({
+      requested_start_date: date
+    });
+  }
+
+  handleEndDateChange(date) {
+		console.log("​LookupCarForm -> handleEndDateChange -> date", date)
+    
+    this.setState({
+      requested_end_date: date
+    });
+  }
+
   car_card() {
 
     let car_address = this.state.the_car 
@@ -538,27 +567,72 @@ class LookupCarForm extends React.Component {
     var car_subtitle = car_address ?
       <h6 className="card-subtitle mb-2 text-muted">{car_address}</h6> :
       <h6 className="card-subtitle mb-2 text-muted">Lookup a car...</h6>;
-    var car_details = car_address ?
-      <ul>
-        <li>VIN: {this.state.car_vin}</li>
-        <li>Owner: {this.state.car_owner}</li>
-        <li>Daily Rate: {this.state.car_daily_rate}</li>
-      </ul> :
+    var car_details;
+    if (car_address) {
+      car_details = (
       <div>
-        <form onSubmit={this.handleCarLookup}>
-          <label>
-            <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
-          </label>
-          <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
-        </form>
+        <ul>
+          <li>VIN: {this.state.car_vin}</li>
+          <li>Owner: {this.state.car_owner}</li>
+          <li>Daily Rate: {this.state.car_daily_rate}</li>
+        </ul>
       </div>
+      );
+    } else {
+      car_details = (
+        <div>
+          <form onSubmit={this.handleCarLookup}>
+            <label>
+              <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
+            </label>
+            <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
+          </form>
+        </div>);
+    }
+
+    var request_agreement_form = "";
+    if (!this.state.lease_agreement && this.state.the_car) {
+      request_agreement_form = (
+
+        <div className="card">
+        <div className="card-body">
+          <h5 className="card-title">Request Lease Agreement</h5>
   
+        <form onSubmit={ this.handleLeaseRequest }>
+          <div className="form-group">
+            <DatePicker
+              name="requested_start_date"
+              selected={this.state.requested_start_date}
+              onChange={this.handleStartDateChange}
+              showTimeSelect
+              dateFormat="MMM d, yyyy h:mm aa"
+              placeholderText="Start at..."
+            />
+            <DatePicker
+              name="requested_end_date"
+              selected={this.state.requested_end_date}
+              onChange={this.handleEndDateChange}
+              showTimeSelect
+              dateFormat="MMM d, yyyy h:mm aa"
+              placeholderText="End at..."
+            />
+          </div>
+          <div className="form-group">
+            <button className="btn btn-success">Get Draft</button>
+          </div>
+        </form>
+        </div>
+      </div>
+        );
+    }
+
     return (
     <div className="card">
       <div className="card-body">
         <h5 className="card-title">Car</h5>
           {car_subtitle}
           {car_details}
+          {request_agreement_form}
       </div>
     </div>
     );
