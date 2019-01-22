@@ -29,7 +29,7 @@ function ts_to_str(epoch_secs_bignumber) {
 
 function agreementStateToStr(state_num) {
   const states = [ "Created", "PartiallySigned", "Approved", 
-    "InProgress", "Completed", "Finalized"];
+    "InProgress", "Completed", "OverDue", "Finalized"];
   return states[state_num];
 }
 
@@ -466,9 +466,7 @@ class LookupCarForm extends React.Component {
     })
   }
 
-  handleRemoveFromList = async (event) => {
-
-    // const { time_machine, time_machine_owner, account } = this.state;
+  handleRemoveFromList(event) {
 
     let address = event.target.attributes.address.value;
     let list_name = event.target.attributes.list_name.value;
@@ -480,7 +478,7 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement, driver_deposit_required } = this.state;
+    const { account, lease_agreement} = this.state;
     
     const amt_wei = web3.utils.toWei('0.1');
 		// console.log("​LookupCarForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
@@ -559,6 +557,50 @@ class LookupCarForm extends React.Component {
     });
   }
 
+    // driver return
+    handleDriverReturn = async (event) => {
+      event.preventDefault();
+      this.setState({action_error: null})
+  
+      const { account, lease_agreement } = this.state;
+      
+      try {
+        const tx = await lease_agreement
+          .driverReturn({from: account});
+        console.log(tx);
+      } catch (error) {
+        console.log(error);
+        this.setState({
+          action_error: format_error_message(error.message),
+        })
+        return;
+      }
+      this.refreshLeaseAgreementInfo(lease_agreement);
+    }
+  
+  
+    // owner finalize
+    handleOwnerFinalize = async (event) => {
+      event.preventDefault();
+      this.setState({action_error: null})
+  
+      const { account, lease_agreement } = this.state;
+      
+      try {
+        const tx = await lease_agreement
+          .ownerFinalize({from: account});
+        console.log(tx);
+      } catch (error) {
+        console.log(error);
+        this.setState({
+          action_error: format_error_message(error.message),
+        })
+        return;
+      }
+      this.refreshLeaseAgreementInfo(lease_agreement);
+    }
+  
+  
   car_card() {
 
     let car_address = this.state.the_car 
@@ -718,6 +760,7 @@ class LookupCarForm extends React.Component {
     let lease_request_disabled = false;
     let payment_disabled = false;
 
+
     if (this.state.lease_agreement) {
       lease_request_disabled = true;
       if (account === this.state.lease_driver) {
@@ -737,8 +780,10 @@ class LookupCarForm extends React.Component {
       }
     }
 
-    let pickup_disabled = agreement_state === "Approved" ? false : true;
+    let pickup_disabled = agreement_state === "Approved" && is_driver ? false : true;
     let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
+    let finalize_disabled = agreement_state === "Completed" && is_owner ? false : true;
+    let return_disabled = agreement_state === "InProgress" && is_driver ? false : true;
 
     var known_cars = JSON.parse(localStorage.getItem("known_cars"));
     known_cars = known_cars ? known_cars : [];
@@ -814,6 +859,14 @@ class LookupCarForm extends React.Component {
                 Pay 2
               </button>
               </li>
+
+              <li>
+              <button onClick={this.handleDriverReturn} type="submit" className="btn btn-primary btn-sm" disabled={return_disabled}>
+                Driver Return
+              </button>
+              </li>
+
+
             </ul>
           </div>
         </div>
@@ -832,6 +885,11 @@ class LookupCarForm extends React.Component {
               <li>
               <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
                 Process Cycle
+              </button>
+              </li>
+              <li>
+              <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={finalize_disabled}>
+                Owner Finalize
               </button>
               </li>
             </ul>

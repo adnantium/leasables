@@ -11,6 +11,7 @@ contract LeaseAgreement {
         Approved,
         InProgress,
         Completed,
+        OverDue,
         Finalized
     }
 
@@ -60,6 +61,7 @@ contract LeaseAgreement {
     event AgreementApproved(address the_car, address the_driver);
     event AgreementStarted(address the_car, address the_driver);
     event AgreementCompleted(address the_car, address the_driver);
+    event AgreementOverDue(address the_car, address the_driver, uint driver_over_balance);
     event AgreementFinalized(address the_car, address the_driver);
 
     // balance update events
@@ -226,6 +228,19 @@ contract LeaseAgreement {
         // require(agreement_state == LeaseAgreementStates.PartiallySigned, "Agreement has not been full signed yet!");
 
         driver_balance += msg.value;
+        emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+
+        // pay off as much of 'driver_over_balance' possible as needed
+        if (driver_over_balance > 0) {
+            if (driver_balance >= driver_over_balance) {
+                driver_balance = driver_balance - driver_over_balance;
+                driver_over_balance = 0;
+            } else {
+                driver_over_balance = driver_over_balance - driver_balance;
+                driver_balance = 0;
+                emit DriverOverBalance(the_car, the_driver, driver_over_balance);
+            }
+        }
         
         emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
     }
@@ -260,7 +275,7 @@ contract LeaseAgreement {
             emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
 
             car_balance += cost_of_this_cycle;
-            emit CarBalanceUpdated(the_car, the_driver, driver_balance);
+            emit CarBalanceUpdated(the_car, the_driver, car_balance);
 
             return 0;
         }
@@ -302,14 +317,25 @@ contract LeaseAgreement {
 
         uint still_due = processRebalance(cost_of_this_cycle);
 
+        return_time = time_now;
+
         last_cycle_time = time_now;
         driver_over_balance = still_due;
+
+        if (driver_over_balance > 0) {
+            agreement_state = LeaseAgreementStates.OverDue;
+            emit AgreementOverDue(the_car, the_driver, driver_over_balance);
+
+        } else {
+            agreement_state = LeaseAgreementStates.Completed;
+            emit AgreementCompleted(the_car, the_driver);
+        }
 
         bool was_disabled = disableDriverAccess();
         if (was_disabled == false) {
             emit DriverAccessFailure(the_car, the_driver, time_now);
         } else {
-            driver_access_enabled = true;
+            driver_access_enabled = false;
         }
     }
 
