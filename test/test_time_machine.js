@@ -80,7 +80,7 @@ contract('TestTimeMachine', function(accounts) {
 
         var tx;
         tx = await test_car1.
-            requestContractDraft(dec_3_2018_12noon, dec_9_2018_12noon, acct_gas);
+            requestDraftAgreement(dec_3_2018_12noon, dec_9_2018_12noon, acct_gas);
         const car1_contract_uid = tx.logs[0].args.contractAddress;
         const car1_contract = await LeaseAgreementArtifact.at(car1_contract_uid);
     

@@ -10,14 +10,11 @@ import "./LeaseAgreement.sol";
 // It manages and coordinates its own individual lease contracts with 
 // drivers based on requirements provided by its owner(s)
 // 
-// The contract creator can specifcy:
+// The car owner(s) can specifcy:
 //  * start and enddate of the time range that this car is available
 //  * minimum allowed lease period e.g. 10 days
-//  * The "home" street address that the car's pickup and return must be done within
-//  * Max distance from "home" Default 5 miles
-//  * 
-// The contracts between the car and driver are created thru this contract. The contract 
-//  assures no conflicts in time ranges
+
+// The contracts between the car and driver are created thru this contract. 
 
 
 contract LeasableCar is Leasable {
@@ -36,13 +33,6 @@ contract LeasableCar is Leasable {
     uint public daily_rate;
 
     uint public minimum_lease_days = 1;
-
-    // dict of yyyyddmm -> the price for that day
-    // mapping (uint => uint) date_prices;
-
-    // the list dates that any prices have been defined for
-    // does not mean the car is available, just that we have a price
-    // uint[] dates_priced;
 
     event LeaseAgreementCreated(LeaseAgreement contractAddress);
     event LeaseAgreementFinalized(LeaseAgreement contractAddress);
@@ -65,11 +55,6 @@ contract LeasableCar is Leasable {
         daily_rate = _daily_rate;
     }
 
-    function getDailyRate() public view returns (uint)
-    {
-        return daily_rate;
-    }
-
     function getLeaseAgreements() public view returns (LeaseAgreement[] memory) {
         return lease_agreements;
     }
@@ -80,24 +65,25 @@ contract LeasableCar is Leasable {
         pure
         returns (bool)
     {
-        // TODO: do the validation
-        // will hope for best in meantime
+        require(_timestamp > 1514808000, "All lease dates must be after Jan 1st 2018!");
+        // TODO: do more detailed validation
+        // HARDCODED
         return true;
     }
 
-    function approve_driver (
+    function check_approved_driver (
         address _driver)
         public
+        pure
         returns (bool)
     {
         // TODO:
         // check that driver meets the requirements for leasing this car.
         // will involve:
-        //  * drover has a valid association with some external identity mgmt protocol e.g. uport
+        //  * driver has a valid association with some external identity mgmt protocol e.g. uport
         //  * driver has a deposit in escrow (now or later?)
         //  * 
-
-        // will hope for best in meantime
+        // HARDCODED!
         return true;
     }
 
@@ -105,18 +91,20 @@ contract LeasableCar is Leasable {
         uint _start_timestamp,
         uint _end_timestamp)
         public
+        pure
         returns (bool)
     {
+        require(_end_timestamp > _start_timestamp, "End of lease has to be AFTER the start!");
+
         // TODO: iterate thru the existing contracts
         // check that start & end dates dont conflict with any of them
-
-        // will hope for best in meantime
+        // HARDCODED!
         return true;
     }
 
 
     // called by the wanna be driver
-    function requestContractDraft (
+    function requestDraftAgreement (
         uint _start_timestamp,
         uint _end_timestamp)
         public
@@ -127,7 +115,7 @@ contract LeasableCar is Leasable {
 
         // TODO: confirm if this driver is cool enough to get a 
         //  contract for this nice car
-        require(approve_driver(driver), "Driver is not approved to lease this vehicle");
+        require(check_approved_driver(driver), "Driver is not approved to lease this vehicle");
 
         // TODO: Check:
         //  start/end dates are valid.

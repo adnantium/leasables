@@ -19,7 +19,7 @@ function assert_approx_wei_equal(wei_str1, wei_str2, message) {
 
 async function create_approved_agreement(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid) {
     var tx = await the_car.
-        requestContractDraft(start_timestamp, end_timestamp, 
+        requestDraftAgreement(start_timestamp, end_timestamp, 
             {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement = await LeaseAgreementArtifact.at(agreement_uid);
@@ -92,7 +92,7 @@ contract('TestDriverReturn', async function(accounts) {
             car_owner_uid, driver_uid);
         
         tx = await agreement.setTimeSource(tm.address, acct_gas);
-        console.log(agreement);
+        // console.log(agreement);
 
         // at pickup time: dec_4_2018_12noon
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
@@ -131,7 +131,7 @@ contract('TestDriverReturn', async function(accounts) {
         assert.ok(error_caught === true, "only driver can return the car!")
 
         tx = await agreement.driverReturn({from: driver_uid});
-        console.log("​catch -> tx", tx)
+        // console.log("​catch -> tx", tx)
         // TODO: check for events
         // AgreementCompleted, DriverAccessDisabled, 
         // assert.equal(tx.logs[n].event, "XX event not emitted!")

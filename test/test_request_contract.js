@@ -40,7 +40,7 @@ contract('TestRequestContract', async function(accounts) {
 
     });
 
-    it("Checking requestContractDraft...", async function() {
+    it("Checking requestDraftAgreement...", async function() {
 
         // December 3, 2018 12:00:00 PM
         var start_timestamp = 1543838400;
@@ -48,7 +48,7 @@ contract('TestRequestContract', async function(accounts) {
         var end_timestamp = 1544356799;
 
         var tx = await test_car1.
-            requestContractDraft(start_timestamp, end_timestamp, {from: acct2_uid});
+            requestDraftAgreement(start_timestamp, end_timestamp, {from: acct2_uid});
         assert.equal(tx.logs.length, 1, "New LeaseAgreement creation should only have 1 event!");
         assert.ok(tx.logs[0].args, "No args in tx!");
         assert.ok(tx.logs[0].args.contractAddress, "No contractAddress in tx!");

@@ -300,7 +300,7 @@ class LookupCarForm extends React.Component {
     }
     var agreement_address;
     try {
-      tx = await the_car.requestContractDraft(start_timestamp, end_timestamp, { from: account });
+      tx = await the_car.requestDraftAgreement(start_timestamp, end_timestamp, { from: account });
       console.log(tx);
       agreement_address = tx.logs[0].args.contractAddress;
     } catch (error) {

@@ -14,7 +14,7 @@ async function create_test_agreement(the_car, driver_uid) {
 
 async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
     var tx = await the_car.
-    requestContractDraft(start_timestamp, end_timestamp, 
+    requestDraftAgreement(start_timestamp, end_timestamp, 
         {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);

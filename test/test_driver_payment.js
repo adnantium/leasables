@@ -56,7 +56,7 @@ contract('TestDriverPayments', async function(accounts) {
                 
         // --------------------------------------------------------------------
         // create a basic agreement
-        let tx = await the_car.requestContractDraft(dec_4_2018_12noon, dec_9_2018_12noon, {from: driver_uid});
+        let tx = await the_car.requestDraftAgreement(dec_4_2018_12noon, dec_9_2018_12noon, {from: driver_uid});
         var agreement_uid = tx.logs[0].args.contractAddress;
         const agreement = await LeaseAgreementArtifact.at(agreement_uid);     
         tx = await agreement.setTimeSource(tm.address, acct_gas);

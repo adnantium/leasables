@@ -17,7 +17,7 @@ function assert_approx_wei_equal(wei_str1, wei_str2, message) {
 
 async function create_approved_agreement(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid) {
     var tx = await the_car.
-        requestContractDraft(start_timestamp, end_timestamp, 
+        requestDraftAgreement(start_timestamp, end_timestamp, 
             {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement = await LeaseAgreementArtifact.at(agreement_uid);
