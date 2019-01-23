@@ -78,6 +78,25 @@ contract LeaseAgreement {
     event DriverAccessFailure(address the_car, address the_driver, uint256 the_time);
 
     
+    modifier driver_only(string memory error_message)
+    {
+        require(
+            msg.sender == the_driver,
+            error_message
+        );
+        _;
+    }
+    
+    modifier owner_only(string memory error_message)
+    {
+        address car_owner = getCarOwner();        
+        require(
+            msg.sender == car_owner,
+            error_message
+        );
+        _;
+    }
+    
     constructor (
         address _car, 
         address _driver, 
@@ -135,6 +154,7 @@ contract LeaseAgreement {
 
     function getCarOwner() 
         public 
+        view
         returns (address the_owner)
     {
         LeasableCar car_contract = LeasableCar(the_car);
@@ -149,8 +169,12 @@ contract LeaseAgreement {
         return address(this).balance;
     }
 
-    function driverSign() public payable {
-        require(msg.sender == the_driver, "Only driver can sign agreement!");
+    function driverSign()
+        public 
+        payable 
+        driver_only("Only driver can sign agreement as the driver!")
+    {
+        // require(msg.sender == the_driver, "Only driver can sign agreement!");
         require(is_driver_signed == false, "Agreement has already been signed by driver");
         require(msg.value >= driver_deposit_required, "Insufficient deposit amount!");
 
@@ -172,11 +196,11 @@ contract LeaseAgreement {
         }
     }
 
-    function ownerSign() public payable {
-
-        address car_owner = getCarOwner();
-
-        require(msg.sender == car_owner, "Only owner can sign agreement!");
+    function ownerSign() 
+        public 
+        payable 
+        owner_only("Only owner can sign agreement as the owner!")
+    {
         require(is_owner_signed == false, "Agreement has already been signed by owner");
         require(msg.value >= owner_deposit_required, "Insufficient deposit amount!");
 
@@ -200,9 +224,12 @@ contract LeaseAgreement {
 
     function driverPickup()
         public
-        payable {
+        payable
+        driver_only("Only the driver can pickup!")
+        // atLeaseState(LeaseAgreementStates.Approved)
+        // atTime(0)
+    {
     
-        require(msg.sender == the_driver, "Only the driver can pickuo!");
         require(agreement_state == LeaseAgreementStates.Approved, "Agreement has not been fully approved!");
         require(timeTillStart() == 0, "Agreement is not ready to start yet");
         // require: car location is right (?)
@@ -223,9 +250,11 @@ contract LeaseAgreement {
         }
     }
 
-    function driverPayment() public payable {
-        require(msg.sender == the_driver, "Only the driver can make payment!");
-        // require(agreement_state == LeaseAgreementStates.PartiallySigned, "Agreement has not been full signed yet!");
+    function driverPayment() 
+        public 
+        payable 
+        driver_only("Only the driver can make payments!")
+    {
 
         driver_balance += msg.value;
         emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
@@ -240,9 +269,8 @@ contract LeaseAgreement {
                 driver_balance = 0;
                 emit DriverOverBalance(the_car, the_driver, driver_over_balance);
             }
-        }
-        
-        emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+            emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+        }        
     }
 
     function processRebalance(uint cost_of_this_cycle) 
@@ -307,8 +335,10 @@ contract LeaseAgreement {
         return cost_of_this_cycle;
     }
 
-    function driverReturn() public { 
-        require(msg.sender == the_driver, "Only the driver can do return!");
+    function driverReturn() 
+        public 
+        driver_only("Only the driver can do return!")
+    { 
 
         uint time_now = time_machine.time_now();
         uint since_last_cycle = time_now - last_cycle_time;

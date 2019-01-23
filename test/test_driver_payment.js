@@ -109,6 +109,20 @@ contract('TestDriverPayments', async function(accounts) {
         assert.equal(tx.logs[0].args.new_balance.toString(), web3.utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
         assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should be 2 after a 2eth payment!");
 
+        // --------------------------------------------------------
+        // Only the driver should be able to make payments to the agreement
+        var error_caught = false;
+        try {
+            payment_amount = web3.utils.toWei(2+'');
+            tx = await agreement.driverPayment({
+                from: car_owner_uid,
+                value: payment_amount,
+                gas: g, gasPrice: gp,
+            });
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Some other account should not be able to make a payment!")
 
     });
 

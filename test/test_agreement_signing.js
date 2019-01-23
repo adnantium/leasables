@@ -144,6 +144,14 @@ contract('TestSignAgreement', async function(accounts) {
         }
         assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit as the driver!")
 
+        try {
+            var tx = await car1_agreement.
+                driverSign({from: car_owner_uid, value: deposit_in});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Owner should not be able to sign and deposit as the driver!")
+
         // Check double sign & deposit
         var error_caught = false;
         var tx = await car1_agreement.
@@ -191,6 +199,14 @@ contract('TestSignAgreement', async function(accounts) {
             error_caught = true;
         }
         assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit the as car owner!")
+
+        try {
+            var tx = await car1_agreement.
+                ownerSign({from: driver_uid, value: deposit_in});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Driver should not be able to sign and deposit the as car owner!")
 
         // 
         // Check double sign & deposit
