@@ -368,6 +368,19 @@ contract LeaseAgreement {
         }
     }
 
+
+    function getCarStatus() 
+        public
+        returns (uint mileage, string memory geolocation)
+    {
+        // TODO: this connects to the status of the car in the real world. 
+        // IOT integration can give us:
+        //  * current mileage 
+        //  * current geolocation
+        // HARDCODED!!!
+        return (11111, "fake_geo_location");
+    }
+
     function disableDriverAccess() 
         private 
         returns (bool was_disabled)

@@ -685,24 +685,19 @@ class LookupCarForm extends React.Component {
       <ul>
         <li>Driver: {this.state.lease_driver}</li>
         <li>State: {this.state.agreement_state}</li>
-        <li>Start: {this.state.lease_start_timestamp}</li>
-        <li>End: {this.state.lease_end_timestamp}</li>
+        <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
+        <li>Daily rate: {this.state.daily_rate} eth</li>
         <li>You are: {is_driver_or_owner}</li>
-        <li>Driver deposit required: {this.state.driver_deposit_required} eth</li>
-        <li>Driver deposit received: {this.state.driver_deposit_amount} eth</li>
-        <li>Owner deposit required: {this.state.owner_deposit_required} eth</li>
-        <li>Owner deposit received: {this.state.owner_deposit_amount} eth</li>
+        <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
+        <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
         <li>Driver balance: {this.state.driver_balance} eth</li>
         <li>Driver over balance: {this.state.driver_over_balance} eth</li>
         <li>Car balance: {this.state.car_balance} eth</li>
         <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
-        <li>Is started: {this.state.is_started}</li>
-        <li>Is ended: {this.state.is_ended}</li>
-        <li>Daily rate: {this.state.daily_rate}</li>
+        <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
         <li>Picked up time: {this.state.pickup_time}</li>
         <li>Returned time: {this.state.return_time}</li>
         <li>Last cycle run: {this.state.last_cycle_time}</li>
-        <li>Contract creator: {this.state.contract_creator}</li>
       </ul>
       :
       <div>
