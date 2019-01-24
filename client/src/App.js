@@ -283,9 +283,13 @@ class LookupCarForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, the_car, lease_agreement_spec } = this.state;
     var tx;
-
+    const { account, the_car, lease_agreement_spec } = this.state;
+    if (!the_car) {
+      this.setState({action_error: "Select a car!"});
+      return;
+    }
+    
     const { requested_end_date, requested_start_date} = this.state;
     if (!requested_start_date || !requested_end_date) {
       this.setState({action_error: "Select a lease start & end date!"});
@@ -294,14 +298,13 @@ class LookupCarForm extends React.Component {
     var start_timestamp = Math.round(requested_start_date.getTime() / 1000);
     var end_timestamp = Math.round(requested_end_date.getTime() / 1000);
 
-    if (!the_car) {
-      this.setState({action_error: "Select a car!"});
-      return;
-    }
     var agreement_address;
     try {
-      tx = await the_car.requestDraftAgreement(start_timestamp, end_timestamp, { from: account });
-      console.log(tx);
+      tx = await the_car.requestDraftAgreement(
+        start_timestamp, end_timestamp, 
+        this.state.time_machine.address,
+        { from: account });
+
       agreement_address = tx.logs[0].args.contractAddress;
     } catch (error) {
       console.log(error)
@@ -312,16 +315,6 @@ class LookupCarForm extends React.Component {
     }
     update_known_list("known_agreements", agreement_address);
     const lease_agreement = await lease_agreement_spec.at(agreement_address);
-
-    try {
-      tx = await lease_agreement.setTimeSource(this.state.time_machine.address, { from: account });
-    } catch (error) {
-      console.log(error)
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
-      return;
-    }
 
     this.setState({ 
       lease_agreement,

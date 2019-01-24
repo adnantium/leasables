@@ -106,7 +106,8 @@ contract LeasableCar is Leasable {
     // called by the wanna be driver
     function requestDraftAgreement (
         uint _start_timestamp,
-        uint _end_timestamp)
+        uint _end_timestamp,
+        address _time_machine)
         public
         returns (LeaseAgreement lease_agreement)
     {
@@ -128,7 +129,7 @@ contract LeasableCar is Leasable {
         require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
 
         LeaseAgreement new_leaseagreement = new LeaseAgreement(
-            car, driver, _start_timestamp, _end_timestamp, daily_rate);
+            car, driver, _start_timestamp, _end_timestamp, daily_rate, _time_machine);
         lease_agreements.push(new_leaseagreement);
 
         emit LeaseAgreementCreated(new_leaseagreement);

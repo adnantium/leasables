@@ -19,11 +19,13 @@ contract LeaseAgreement {
     address public the_car;
     // The Driver
     address public the_driver;
+
+    // this is usually the car but not neccasarily
     address public contract_creator;
 
     LeaseAgreementStates public agreement_state = LeaseAgreementStates.Created;
-    uint public start_timestamp = 0;
-    uint public end_timestamp = 0;
+    uint public start_timestamp;
+    uint public end_timestamp;
 
     TimeMachine public time_machine;
 
@@ -49,13 +51,13 @@ contract LeaseAgreement {
     uint256 public driver_over_balance = 0;
     uint256 public car_balance = 0;
 
-    uint public pickup_time = 0;
-    uint public return_time = 0;
+    uint public pickup_time;
+    uint public return_time;
 
-    uint public last_cycle_time = 0;
+    uint public last_cycle_time;
 
     // Agreement state transition events
-    event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp, uint256 daily_rate);
+    event DraftCreated(address the_car, address the_driver, uint start_timestamp, uint end_timestamp, uint256 daily_rate, address time_machine);
     event DriverSigned(address the_car, address the_driver, uint256 deposit_amount);
     event OwnerSigned(address the_car, address the_driver, uint256 deposit_amount);
     event AgreementApproved(address the_car, address the_driver);
@@ -102,7 +104,8 @@ contract LeaseAgreement {
         address _driver, 
         uint _start_timestamp, 
         uint _end_timestamp,
-        uint256 _daily_rate
+        uint256 _daily_rate,
+        address _time_machine
         ) 
         public 
     {
@@ -122,12 +125,8 @@ contract LeaseAgreement {
         driver_deposit_required = daily_rate * 4;
         owner_deposit_required = daily_rate * 2;
 
-        emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate);
-    }
-
-    function setTimeSource(address _time_machine) public 
-    {
         time_machine = TimeMachine(_time_machine);
+        emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate, address(time_machine));
     }
 
     function timeTillStart() public view returns (uint time_till_start)
