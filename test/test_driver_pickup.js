@@ -8,9 +8,9 @@ var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
 
 
-async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
+async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid, time_machine_address) {
     var tx = await the_car.
-    requestDraftAgreement(start_timestamp, end_timestamp, 
+    requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
         {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);
@@ -68,8 +68,7 @@ contract('TestAgreementTiming', async function(accounts) {
 
         // agreement start: dec_4_2018_12noon
         const car1_agreement = await create_agreement(
-            car1, dec_4_2018_12noon, dec_9_2018_12noon, driver_uid);
-        tx = await car1_agreement.setTimeSource(tm.address, acct_gas);
+            car1, dec_4_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
 
         // driver sign + deposit
         var driver_deposit_required = await car1_agreement.driver_deposit_required.call();

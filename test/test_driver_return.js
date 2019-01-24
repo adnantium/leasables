@@ -17,9 +17,9 @@ function assert_approx_wei_equal(wei_str1, wei_str2, message) {
 }
 
 
-async function create_approved_agreement(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid) {
+async function create_approved_agreement(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid, time_machine_address) {
     var tx = await the_car.
-        requestDraftAgreement(start_timestamp, end_timestamp, 
+        requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
             {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement = await LeaseAgreementArtifact.at(agreement_uid);
@@ -88,12 +88,9 @@ contract('TestDriverReturn', async function(accounts) {
         let tx;
 
         const agreement = await create_approved_agreement(
-            the_car, dec_4_2018_12noon, dec_9_2018_12noon, 
-            car_owner_uid, driver_uid);
+            the_car, dec_4_2018_12noon, dec_9_2018_12noon,
+            car_owner_uid, driver_uid, tm.address);
         
-        tx = await agreement.setTimeSource(tm.address, acct_gas);
-        // console.log(agreement);
-
         // at pickup time: dec_4_2018_12noon
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         tx = await agreement.driverPickup({from: driver_uid, value: 0});

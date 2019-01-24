@@ -5,6 +5,7 @@ const Web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var TimeMachineArtifact = artifacts.require("TimeMachine");
 
 contract('TestRequestContract', async function(accounts) {
 
@@ -15,6 +16,10 @@ contract('TestRequestContract', async function(accounts) {
 
     var g = 4712388;
     var gp = 100000000000;
+
+    var tm;
+    const acct_gas = {from: accounts[0], gas: g, gasPrice: gp};
+    const dec_3_2018_12noon = 1543838400;
 
     before(async function() {
         // create a car from acct1
@@ -38,6 +43,9 @@ contract('TestRequestContract', async function(accounts) {
         //         console.log("error!! : " + error);
         //     });
 
+        // its dec_3_2018_12noon
+        tm = await TimeMachineArtifact.new(dec_3_2018_12noon, acct_gas);
+
     });
 
     it("Checking requestDraftAgreement...", async function() {
@@ -48,7 +56,7 @@ contract('TestRequestContract', async function(accounts) {
         var end_timestamp = 1544356799;
 
         var tx = await test_car1.
-            requestDraftAgreement(start_timestamp, end_timestamp, {from: acct2_uid});
+            requestDraftAgreement(start_timestamp, end_timestamp, tm.address, {from: acct2_uid});
         assert.equal(tx.logs.length, 1, "New LeaseAgreement creation should only have 1 event!");
         assert.ok(tx.logs[0].args, "No args in tx!");
         assert.ok(tx.logs[0].args.contractAddress, "No contractAddress in tx!");

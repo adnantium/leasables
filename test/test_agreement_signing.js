@@ -5,16 +5,11 @@ const Web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var TimeMachineArtifact = artifacts.require("TimeMachine");
 
-async function create_test_agreement(the_car, driver_uid) {
-    var start_timestamp = 1543838400;
-    var end_timestamp = 1544356799;
-    return create_agreement(the_car, start_timestamp, end_timestamp, driver_uid)
-}
-
-async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
+async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid, time_machine_address) {
     var tx = await the_car.
-    requestDraftAgreement(start_timestamp, end_timestamp, 
+    requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
         {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);
@@ -28,17 +23,34 @@ contract('TestSignAgreement', async function(accounts) {
     var car1;
     var car1_uid;
     // var car1_agreement;
+    var tm;
 
     var car_owner_uid = accounts[0];
     var driver_uid = accounts[1];
-    var driver_uid = accounts[2];
-    var driver_uid = accounts[3];
-    var driver_uid = accounts[4];
-    var driver_uid = accounts[5];
+    var driver2_uid = accounts[2];
+    var driver3_uid = accounts[3];
+    var driver4_uid = accounts[4];
+    var driver5_uid = accounts[5];
     var some_other_account = accounts[8]
 
     var g = 4712388;
     var gp = 100000000000;
+
+    const acct_gas = {from: accounts[0], gas: g, gasPrice: gp};
+
+    const one_hour_secs = 60*60;
+    const one_day_secs = 60*60*24;
+    const dec_2_2018_12noon = 1543752000;
+    const dec_3_2018_8am = 1543824000;
+    const dec_3_2018_12noon = 1543838400;
+    const dec_3_2018_3pm = 1543849200;
+    const dec_3_2018_4pm = 1543852800;
+    const dec_4_2018_12noon = 1543924800;
+    const dec_4_2018_4pm = 1543939200;
+
+    const dec_9_2018_12noon = 1544356800;
+    const dec_9_2018_4pm = 1544371200;
+
 
     before(async function() {
         var daily_rate = web3.utils.toWei(0.5+'');
@@ -47,11 +59,14 @@ contract('TestSignAgreement', async function(accounts) {
             {from: car_owner_uid, gas: g, gasPrice: gp}
         );
         car1_uid = car1.address
+
+        // its dec_3_2018_12noon
+        tm = await TimeMachineArtifact.new(dec_3_2018_12noon, acct_gas);
     });
 
     it("Checking driverSign with exact deposit amount...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
 
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
@@ -81,7 +96,7 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking driverSign with extra deposit amount...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);      
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
 
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
@@ -117,7 +132,7 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking driverSign require() conditions...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);                          
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
         var deposit_required = await car1_agreement.driver_deposit_required.call();
 
         // Check min deposit required
@@ -168,7 +183,7 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking ownerSign require() conditions...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
 
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
@@ -228,8 +243,8 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking ownerSign with exact deposit amount...", async function() {
 
-        const car1_agreement = await create_test_agreement(car1, driver_uid);
-            
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+
         var deposit_required = await car1_agreement.owner_deposit_required.call();
         // deposit_required = deposit_required.toNumber();
         deposit_in = deposit_required;

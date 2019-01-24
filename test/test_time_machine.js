@@ -78,15 +78,15 @@ contract('TestTimeMachine', function(accounts) {
             acct_gas
         );
 
+
+        const tm = await TimeMachineArtifact.new(dec_2_2018_12noon, acct_gas);
+
         var tx;
         tx = await test_car1.
-            requestDraftAgreement(dec_3_2018_12noon, dec_9_2018_12noon, acct_gas);
+            requestDraftAgreement(dec_3_2018_12noon, dec_9_2018_12noon, tm.address, acct_gas);
         const car1_contract_uid = tx.logs[0].args.contractAddress;
         const car1_contract = await LeaseAgreementArtifact.at(car1_contract_uid);
     
-        const tm = await TimeMachineArtifact.new(dec_2_2018_12noon, acct_gas);
-        tx = await car1_contract.setTimeSource(tm.address);
-
         time_till_start = await car1_contract.timeTillStart.call(acct_gas);
         assert.equal(time_till_start, dec_3_2018_12noon - dec_2_2018_12noon);
 
