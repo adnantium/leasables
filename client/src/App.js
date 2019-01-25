@@ -100,6 +100,12 @@ class App extends Component {
       var time_machine_spec = truffle_contract(TimeMachineContract);
       time_machine_spec.setProvider(web3.currentProvider);
 
+      var time_machine = await time_machine_spec.deployed();
+      let virtual_time = await time_machine.time_now.call();
+      var time_machine_owner = await time_machine.owner();
+
+      var account_balance = await web3.eth.getBalance(account);
+  
       // Set web3, accounts, and contract to the state so that other 
       // components can access it
       this.setState({ 
@@ -109,6 +115,10 @@ class App extends Component {
         car_contract_spec,
         lease_agreement_spec,
         time_machine_spec,
+        time_machine,
+        time_machine_owner,
+        virtual_time: ts_to_str(virtual_time),
+        account_balance,
       });
       
     } catch (error) {
@@ -126,9 +136,17 @@ class App extends Component {
 
     return (
       <div className="container">
-            <h6 className="text-muted text-right">
-              Hello {this.state.account}
-            </h6>
+        <div className="row">
+          <div className="col-sm">
+            <h3>Leasables Dev Demo</h3>
+          </div>
+
+          <div className="col-sm">
+            <h6 className="text-muted text-right">Hello {this.state.account}</h6>
+            <h6 className="text-muted text-right">Time is: {this.state.virtual_time}</h6>
+            <h6 className="text-muted text-right">Your balance: {weiToEther(this.state.account_balance)} eth</h6>
+          </div>
+        </div>
       <Tabs selectedIndex={this.state.tabIndex} 
         onSelect={tabIndex => this.setState({ tabIndex })}>
         <TabList>
