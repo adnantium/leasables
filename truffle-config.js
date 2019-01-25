@@ -19,11 +19,11 @@
  */
 
 const path = require("path");
-// const HDWalletProvider = require('truffle-hdwallet-provider');
-// const infuraKey = "fj4jll3k.....";
-//
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const fs = require('fs');
+
+const HDWallet = require('truffle-hdwallet-provider');
+const infuraKey = "d6e4870388d745089db09cf18cd1d3ce";
+const rinkeby_mnemonic = fs.readFileSync(".secret-rinkeby").toString().trim();
 
 module.exports = {
   /**
@@ -49,6 +49,13 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     //  gas: 6000000,           // Gas sent with each transaction (default: ~6700000)
     //  gasPrice: 2000000000,  // 20 gwei (in wei) (default: 100 gwei)
+    },
+
+    rinkeby: {
+      provider: () => new HDWallet(rinkeby_mnemonic, `https://rinkeby.infura.io/${infuraKey}`),
+      network_id: 4,          // Rinkeby's id
+      gas: 5500000,        
+      skipDryRun: true,     // Skip dry run before migrations? (default: false for public nets )
     },
 
     // Another network with more advanced options...
