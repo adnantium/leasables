@@ -35,7 +35,7 @@ contract LeasableCar is Leasable {
     uint public minimum_lease_days = 1;
 
     event LeaseAgreementCreated(LeaseAgreement contractAddress);
-    event LeaseAgreementFinalized(LeaseAgreement contractAddress);
+    event LeaseAgreementClosed(LeaseAgreement contractAddress);
 
     constructor(
             string memory _VIN,
@@ -111,8 +111,9 @@ contract LeasableCar is Leasable {
         public
         returns (LeaseAgreement lease_agreement)
     {
-        address driver = msg.sender;
-        address car = address(this);
+        address payable driver = msg.sender;
+        address car_address = address(this) ;
+        address payable car = address(uint160(car_address));
 
         // TODO: confirm if this driver is cool enough to get a 
         //  contract for this nice car
@@ -136,4 +137,17 @@ contract LeasableCar is Leasable {
 
         return new_leaseagreement;
     }
+
+    function() external payable {}
+    // function closeAgreement(address _lease_agreement_address)
+    //     payable
+    //     external
+    // {
+    //     // TODO require(msg.sender == a known contract!)
+    //     // LeaseAgreement lease_agreement = LeaseAgreement(_lease_agreement_address);
+    //     // lease_agreement.carFinalize();
+
+    //     emit LeaseAgreementClosed(_lease_agreement_address);
+    // }
+    
 }

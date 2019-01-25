@@ -12,13 +12,14 @@ contract LeaseAgreement {
         InProgress,
         Completed,
         OverDue,
-        Finalized
+        Finalized,
+        Closed
     }
 
     // The LeasableCar 
-    address public the_car;
+    address payable public the_car;
     // The Driver
-    address public the_driver;
+    address payable public the_driver;
 
     // this is usually the car but not neccasarily
     address public contract_creator;
@@ -72,6 +73,9 @@ contract LeaseAgreement {
     event DriverOverBalance(address the_car, address the_driver, uint256 the_over_balance);
     event CarBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     event CycleProcessed(address the_car, address the_driver, uint start_time, uint end_time, uint256 cycle_cost);
+    event OwnerDepositReturned(address the_car, address the_driver, uint owner_deposit_refund_due);
+    event CarBalanceTransfered(address the_car, address the_driver, uint car_balance_due);
+
 
     // External (physical) events
     event CarReturned(address the_car, address the_driver, uint256 the_time);
@@ -80,28 +84,13 @@ contract LeaseAgreement {
     event DriverAccessFailure(address the_car, address the_driver, uint256 the_time);
 
     
-    modifier driver_only(string memory error_message)
-    {
-        require(
-            msg.sender == the_driver,
-            error_message
-        );
-        _;
-    }
-    
-    modifier owner_only(string memory error_message)
-    {
-        address car_owner = getCarOwner();        
-        require(
-            msg.sender == car_owner,
-            error_message
-        );
-        _;
-    }
+    modifier driver_only(string memory error_message) { require(msg.sender == the_driver, error_message); _; }
+    modifier owner_only(string memory error_message) { address car_owner = getCarOwner(); require(msg.sender == car_owner, error_message); _; } 
+    modifier car_only(string memory error_message) { require(msg.sender == the_car, error_message); _; }
     
     constructor (
-        address _car, 
-        address _driver, 
+        address payable _car, 
+        address payable _driver, 
         uint _start_timestamp, 
         uint _end_timestamp,
         uint256 _daily_rate,
@@ -120,8 +109,8 @@ contract LeaseAgreement {
         wei_per_sec = daily_rate/86400;
 
         // default deposit amounts:
-        // driver: 4 weeks of payments
-        // owner: 2 weeks
+        // driver: 4 days of payments
+        // owner: 2 days
         driver_deposit_required = daily_rate * 4;
         owner_deposit_required = daily_rate * 2;
 
@@ -214,7 +203,7 @@ contract LeaseAgreement {
             agreement_state = LeaseAgreementStates.PartiallySigned;
         }
 
-        // add any extra $ to the driver's balance
+        // add any extra $ to the car's balance
         if (msg.value > owner_deposit_required) {
             car_balance = msg.value - owner_deposit_required;
             emit CarBalanceUpdated(the_car, the_driver, car_balance);
@@ -286,7 +275,7 @@ contract LeaseAgreement {
             uint still_due = cost_of_this_cycle - driver_balance;
             driver_balance = 0;
 
-            // take remaining money needed from the driver's deposit
+            // take any remaining money needed from the driver's deposit
             if (still_due > driver_deposit_amount) {
                 car_balance += driver_deposit_amount;
                 still_due = still_due - driver_deposit_amount;
@@ -368,9 +357,32 @@ contract LeaseAgreement {
         }
     }
 
+    function ownerFinalize()
+        public
+        owner_only("Only the car owner can ownerFinalize!")
+    {
+        require(agreement_state == LeaseAgreementStates.Completed || 
+            agreement_state == LeaseAgreementStates.OverDue,
+            "Agreement can only be finalized when its Completed or OverDue");
+
+        // release the owner's deposit
+        uint owner_deposit_refund_due = owner_deposit_amount;
+        owner_deposit_amount = 0; 
+        msg.sender.transfer(owner_deposit_refund_due);
+        emit OwnerDepositReturned(the_car, the_driver, owner_deposit_refund_due);
+
+        // transfer the car's balance
+        uint car_balance_due = car_balance;
+        car_balance = 0;
+        the_car.transfer(car_balance_due);
+        emit CarBalanceTransfered(the_car, the_driver, car_balance_due);
+    }
+
 
     function getCarStatus() 
         public
+        pure 
+        // NOTE: marking as 'pure' to silence compiler warning. Will not be pure once implmented
         returns (uint mileage, string memory geolocation)
     {
         // TODO: this connects to the status of the car in the real world. 
