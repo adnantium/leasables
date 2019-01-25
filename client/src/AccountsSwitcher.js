@@ -41,7 +41,8 @@ class AccountsSwitcherCard extends React.Component {
     const accounts_list = this.state.all_accounts.map((acct) =>
           <li>
             <a href="/" onClick={this.handleAccountSwitch} acct={acct} className="badge badge-light">
-              {shrinkAddress(acct)}
+              {/* {shrinkAddress(acct)} */}
+              {acct}
             </a>
           </li>
     );
@@ -49,7 +50,7 @@ class AccountsSwitcherCard extends React.Component {
     return (
       <div class="card">
       <div class="card-body">
-        <h5 class="card-title">Accounts</h5>
+        <h5 class="card-title">Available Accounts</h5>
         <p class="card-text">
           <ul>{accounts_list}</ul>
         </p>
