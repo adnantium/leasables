@@ -23,7 +23,7 @@ const fs = require('fs');
 
 const HDWallet = require('truffle-hdwallet-provider');
 const infuraKey = "d6e4870388d745089db09cf18cd1d3ce";
-const rinkeby_mnemonic = fs.readFileSync(".secret-rinkeby").toString().trim();
+const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
   /**
@@ -52,7 +52,7 @@ module.exports = {
     },
 
     rinkeby: {
-      provider: () => new HDWallet(rinkeby_mnemonic, `https://rinkeby.infura.io/${infuraKey}`),
+      provider: () => new HDWallet(mnemonic, `https://rinkeby.infura.io/${infuraKey}`),
       network_id: 4,          // Rinkeby's id
       gas: 5500000,        
       skipDryRun: true,     // Skip dry run before migrations? (default: false for public nets )

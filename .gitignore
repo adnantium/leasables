@@ -2,3 +2,4 @@ node_modules/
 .vscode/launch.json
 client/src/contracts/
 .DS_Store
+.secret
