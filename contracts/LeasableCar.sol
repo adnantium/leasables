@@ -55,13 +55,17 @@ contract LeasableCar is Leasable {
         daily_rate = _daily_rate;
     }
 
-    function getLeaseAgreements() public view returns (LeaseAgreement[] memory) {
+    function getLeaseAgreements() 
+        public 
+        view 
+        returns (LeaseAgreement[] memory) 
+    {
         return lease_agreements;
     }
 
     function validate_date_format (
         uint _timestamp)
-        public
+        internal
         pure
         returns (bool)
     {
@@ -73,7 +77,7 @@ contract LeasableCar is Leasable {
 
     function check_approved_driver (
         address _driver)
-        public
+        internal
         pure
         returns (bool)
     {
@@ -91,7 +95,7 @@ contract LeasableCar is Leasable {
     function check_dates_are_available (
         uint _start_timestamp,
         uint _end_timestamp)
-        public
+        internal
         pure
         returns (bool)
     {
@@ -110,8 +114,10 @@ contract LeasableCar is Leasable {
         uint _end_timestamp,
         address _time_machine)
         public
+        only_when_activated("Cannot create any new lease agreements when car is deactivated!")
         returns (LeaseAgreement lease_agreement)
     {
+
         address payable driver = msg.sender;
         address car_address = address(this) ;
         address payable car = address(uint160(car_address));
@@ -132,7 +138,10 @@ contract LeasableCar is Leasable {
 
         LeaseAgreement new_leaseagreement = new LeaseAgreement(
             car, driver, _start_timestamp, _end_timestamp, daily_rate, _time_machine);
-        lease_agreements.push(new_leaseagreement);
+        // lease_agreements.push(new_leaseagreement);
+        // NOTE: not adding newly created draft contracts to list yet. Will add 
+        // when owner is signing agreement after the driver has signed and 
+        // commited a deposit
 
         emit LeaseAgreementCreated(address(new_leaseagreement));
 
@@ -152,5 +161,4 @@ contract LeasableCar is Leasable {
     //     // emit LeaseAgreementClosed(_lease_agreement_address);
     //     emit LeaseAgreementClosed(msg.sender);
     // }
-    
 }
