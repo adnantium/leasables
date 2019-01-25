@@ -163,6 +163,7 @@ class App extends Component {
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
               time_machine_spec={this.state.time_machine_spec}
+              web3={this.state.web3}
               account={this.state.account} />
           </div>
         </div>
@@ -770,6 +771,8 @@ class CarMgmtForm extends React.Component {
       lease_agreement_spec: this.props.lease_agreement_spec,
       account: this.props.account,
       time_machine_spec: this.props.time_machine_spec,
+      web3: this.props.web3,
+
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
@@ -820,13 +823,15 @@ class CarMgmtForm extends React.Component {
     let car_vin = await the_car.VIN.call();
     let car_owner = await the_car.owner.call();
     let car_daily_rate_wei = await the_car.daily_rate.call();
-    let car_daily_rate = weiToEther(car_daily_rate_wei);
+    let car_contract_balance_wei = await this.state.web3.eth.getBalance(the_car.address);
+
 
     this.setState({ 
       the_car,
       car_vin,
       car_owner,
-      car_daily_rate,
+      car_daily_rate: weiToEther(car_daily_rate_wei),
+      car_contract_balance: weiToEther(car_contract_balance_wei),
      });
   }
 
@@ -918,6 +923,7 @@ class CarMgmtForm extends React.Component {
           <li>VIN: {this.state.car_vin}</li>
           <li>Owner: {this.state.car_owner}</li>
           <li>Daily Rate: {this.state.car_daily_rate}</li>
+          <li>Balance: {this.state.car_contract_balance} eth</li>
         </ul>
       </div>
       );
