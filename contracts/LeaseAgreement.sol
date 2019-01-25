@@ -399,6 +399,8 @@ contract LeaseAgreement {
         uint driver_balance_refund_due = driver_balance;
         driver_balance = 0; 
         msg.sender.transfer(driver_balance_refund_due);
+
+        agreement_state = LeaseAgreementStates.Closed;
     }
 
     function getCarStatus() 
