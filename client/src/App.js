@@ -542,8 +542,9 @@ class AgreementLookupForm extends React.Component {
       ? this.state.the_car.address : "";
 
     var agreement_subtitle = agreement_address ?
-      <h6 className="card-subtitle mb-2 text-muted">{agreement_address}</h6> :
+      <h6 className="card-subtitle mb-2 text-muted">Contract: {agreement_address}</h6> :
       <h6 className="card-subtitle mb-2 text-muted">Lookup an agreement...</h6>;
+
     var agreement_details = agreement_address ?
       <div>
       <ul>
@@ -657,99 +658,95 @@ class AgreementLookupForm extends React.Component {
 
       return (
     <div className="row">
-      <div className="col-sm">
+      <div className="col-lg-9">
 
         {lookup_error_text}
 
         {this.agreement_card(is_driver_or_owner)}
 
-      </div>
-
-      <div className="col-sm">
-      {action_error_text}
-      <div className="row">
-        <div className="col-sm">
-        <div className="card">
-          <div className="card-body">
-            <h6 className="card-subtitle mb-2 text-muted">Driver Actions</h6>
-
-            <ul>
-              <li>
-              <button onClick={this.handleLeaseRequest} type="submit" className="btn btn-primary btn-sm" disabled={lease_request_disabled}>
-                Request Lease
-              </button>
-              </li>
-              <li>
-              <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
-                Driver Sign+Deposit
-              </button>
-              </li>
-              <li>
-              <button onClick={this.handleDriverPickupSubmit} type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
-                Driver Pickup
-              </button>
-              </li>
-
-              <li>
-              <button onClick={this.handlePayment} amount="0.5" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
-                Pay 0.5
-              </button>
-              <button onClick={this.handlePayment} amount="1" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
-                Pay 1
-              </button>
-              <button onClick={this.handlePayment} amount="2" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
-                Pay 2
-              </button>
-              </li>
-
-              <li>
-              <button onClick={this.handleDriverReturn} type="submit" className="btn btn-primary btn-sm" disabled={return_disabled}>
-                Driver Return
-              </button>
-              </li>
-
-
-            </ul>
-          </div>
-        </div>
-        </div>
-        <div className="col-sm">
-        <div className="card">
-          <div className="card-body">
-            <h6 className="card-subtitle mb-2 text-muted">Owner Actions</h6>
-
-            <ul>
-              <li>
-              <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
-                Owner Sign+Deposit
-              </button>
-              </li>
-              <li>
-              <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
-                Process Cycle
-              </button>
-              </li>
-              <li>
-              <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={finalize_disabled}>
-                Owner Finalize
-              </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-        </div>
-      </div>
-
         <div className="card">
             <h6 class="card-header">Recently Seen Lease Agreements</h6>
             <div className="card-body">
-
               <ul>{known_agreements_list}</ul>
-
             </div>
         </div>
 
       </div>
+
+      <div className="col-lg-3">
+
+        {action_error_text}
+
+        <div className="card">
+          <div className="card-body">
+            <h6 className="card-subtitle mb-2 text-muted">Driver Actions</h6>
+
+            <div class="btn-toolbar mb-3" role="toolbar">
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handleLeaseRequest} type="submit" className="btn btn-primary btn-sm" disabled={lease_request_disabled}>
+                  Request Lease
+                </button>
+              </div>
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
+                  Driver Sign+Deposit
+                </button>
+              </div>
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handleDriverPickupSubmit} type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
+                  Driver Pickup
+                </button>
+              </div>
+
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handlePayment} amount="0.5" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                  Pay 0.5
+                </button>
+                <button onClick={this.handlePayment} amount="1" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                  Pay 1
+                </button>
+                <button onClick={this.handlePayment} amount="2" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
+                  Pay 2
+                </button>
+              </div>
+
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handleDriverReturn} type="submit" className="btn btn-primary btn-sm" disabled={return_disabled}>
+                  Driver Return
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="card">
+          <div className="card-body">
+            <h6 className="card-subtitle mb-2 text-muted">Owner Actions</h6>
+
+            <div class="btn-toolbar mb-3" role="toolbar">
+
+              <div class="btn-group mr-2" role="group">
+              <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
+                Owner Sign+Deposit
+              </button>
+              </div>
+              <div class="btn-group mr-2" role="group">
+              <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
+                Process Cycle
+              </button>
+              </div>
+              <div class="btn-group mr-2" role="group">
+              <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={finalize_disabled}>
+                Owner Finalize
+              </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
     );
   }
