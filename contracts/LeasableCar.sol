@@ -34,8 +34,8 @@ contract LeasableCar is Leasable {
 
     uint public minimum_lease_days = 1;
 
-    event LeaseAgreementCreated(LeaseAgreement contractAddress);
-    event LeaseAgreementClosed(LeaseAgreement contractAddress);
+    event LeaseAgreementCreated(address contractAddress);
+    event LeaseAgreementClosed(address contractAddress);
 
     constructor(
             string memory _VIN,
@@ -84,6 +84,7 @@ contract LeasableCar is Leasable {
         //  * driver has a deposit in escrow (now or later?)
         //  * 
         // HARDCODED!
+        require(_driver != address(0), "hack to silence warning about unused variable");
         return true;
     }
 
@@ -133,21 +134,23 @@ contract LeasableCar is Leasable {
             car, driver, _start_timestamp, _end_timestamp, daily_rate, _time_machine);
         lease_agreements.push(new_leaseagreement);
 
-        emit LeaseAgreementCreated(new_leaseagreement);
+        emit LeaseAgreementCreated(address(new_leaseagreement));
 
         return new_leaseagreement;
     }
 
+    // fallback catch all
     function() external payable {}
-    // function closeAgreement(address _lease_agreement_address)
+
+    // function closeAgreement(address payable _lease_agreement_address)
+    // function closeAgreement()
     //     payable
-    //     external
+    //     public
     // {
     //     // TODO require(msg.sender == a known contract!)
-    //     // LeaseAgreement lease_agreement = LeaseAgreement(_lease_agreement_address);
-    //     // lease_agreement.carFinalize();
 
-    //     emit LeaseAgreementClosed(_lease_agreement_address);
+    //     // emit LeaseAgreementClosed(_lease_agreement_address);
+    //     emit LeaseAgreementClosed(msg.sender);
     // }
     
 }

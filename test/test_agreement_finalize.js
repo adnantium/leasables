@@ -6,13 +6,14 @@ var assert = chai.assert;
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
+const helpers = require('./utils/helpers.js');
+const assert_approx_wei_equal = helpers.assert_approx_wei_equal;
 
-
-function assert_approx_wei_equal(wei_str1, wei_str2, delta, message) {
-    var w1 = wei_str1.toString().slice(0, -12);
-    var w2 = wei_str2.toString().slice(0, -12);
-    assert.approximately(parseInt(w1), parseInt(w2), delta, message);
-}
+// function assert_approx_wei_equal(wei_str1, wei_str2, delta, message) {
+//     var w1 = wei_str1.toString().slice(0, -12);
+//     var w2 = wei_str2.toString().slice(0, -12);
+//     assert.approximately(parseInt(w1), parseInt(w2), delta, message);
+// }
 
 
 
@@ -68,7 +69,7 @@ contract('TestDriverReturn', async function(accounts) {
     beforeEach(async function() {
                 
         var tx = await the_car.
-            requestDraftAgreement(dec_4_2018_12noon, dec_19_2018_4pm, tm.address,
+            requestDraftAgreement(dec_4_2018_12noon, dec_9_2018_12noon, tm.address,
                 {from: driver_uid});
         var agreement_uid = tx.logs[0].args.contractAddress;
         agreement = await LeaseAgreementArtifact.at(agreement_uid);
@@ -85,7 +86,7 @@ contract('TestDriverReturn', async function(accounts) {
     
     });
     
-    it("Checking ownerFinalize() with positive driver balance...", async function() {
+    it("Checking ownerFinalize() and driverFinalize() with positive driver balance...", async function() {
 
         let tx;
 
@@ -97,7 +98,7 @@ contract('TestDriverReturn', async function(accounts) {
         });
     
         // return time:
-        tx = await tm.setNow(dec_19_2018_4pm, acct_gas);    
+        tx = await tm.setNow(dec_9_2018_12noon, acct_gas);    
         tx = await agreement.driverReturn({from: driver_uid});
 
 
@@ -113,15 +114,29 @@ contract('TestDriverReturn', async function(accounts) {
 
 
         tx = await agreement.ownerFinalize({from: car_owner_uid});
-        // tx = await agreement.carFinalize({from: car_owner_uid});
-        // tx = await the_car.closeAgreement(agreement.address, {from: car1_uid});
-		// console.log('​tx', tx)
+		// console.log(tx)
 
         var in_car_owner_wallet_after = await web3.eth.getBalance(car_owner_uid);
-        assert_approx_wei_equal(in_car_owner_wallet_after, expected_after_owner_finalize, 1000, "Owner funds balance after ownerFinalzie is wrong!")
+        assert_approx_wei_equal(in_car_owner_wallet_after, expected_after_owner_finalize, 1000, "Owner funds balance after ownerFinalize is wrong!")
 
         var in_car_wallet_after = await web3.eth.getBalance(car1_uid);
-        assert_approx_wei_equal(in_car_wallet_after, expected_after_car_finalize, 10, "Car funds balance after ownerFinalzie is wrong!")
+        assert_approx_wei_equal(in_car_wallet_after, expected_after_car_finalize, 10, "Car funds balance after ownerFinalize is wrong!")
+
+        var agreement_state = await agreement.agreement_state.call();
+        assert.equal(agreement_state.toNumber(), 6, "Agreement should be in Finalized(6) state after ownerFinalize() with positive balance!");
+    
+
+        // before driverFinalize
+        var driver_balance = await agreement.driver_balance();
+		console.log('​driver_balance', driver_balance.toString());
+        var in_driver_wallet_before = await web3.eth.getBalance(driver_uid);
+        var expected_after_driver_finalize = BigInt(in_driver_wallet_before) + BigInt(driver_balance);
+
+        // now the driver settles up
+        tx = await agreement.driverFinalize({from: driver_uid});
+
+        var in_driver_wallet_after = await web3.eth.getBalance(driver_uid);
+        // assert_approx_wei_equal(in_driver_wallet_after, expected_after_driver_finalize, 100, "Driver funds balance after driverFinalize is wrong!")
 
     });
     it("Checking ownerFinalize() with negative driver balance...", async function() {
@@ -136,7 +151,7 @@ contract('TestDriverReturn', async function(accounts) {
         });
     
         // return time:
-        tx = await tm.setNow(dec_19_2018_4pm, acct_gas);    
+        tx = await tm.setNow(dec_9_2018_12noon, acct_gas);    
         tx = await agreement.driverReturn({from: driver_uid});
 
         // after ownerFinalize: car owner's wallet balance should += owner refund due
@@ -153,7 +168,7 @@ contract('TestDriverReturn', async function(accounts) {
         tx = await agreement.ownerFinalize({from: car_owner_uid});
         // tx = await agreement.carFinalize({from: car_owner_uid});
         // tx = await the_car.closeAgreement(agreement.address, {from: car1_uid});
-		// console.log('​tx', tx)
+		console.log(tx)
 
         var in_car_owner_wallet_after = await web3.eth.getBalance(car_owner_uid);
         assert_approx_wei_equal(in_car_owner_wallet_after, expected_after_owner_finalize, 1000, "Owner funds balance after ownerFinalzie is wrong!")
@@ -162,4 +177,5 @@ contract('TestDriverReturn', async function(accounts) {
         assert_approx_wei_equal(in_car_wallet_after, expected_after_car_finalize, 10, "Car funds balance after ownerFinalzie is wrong!")
 
     });
+
 });

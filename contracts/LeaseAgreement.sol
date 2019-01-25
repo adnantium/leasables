@@ -6,14 +6,14 @@ import "./TimeMachine.sol";
 contract LeaseAgreement {
 
     enum LeaseAgreementStates {
-        Created,
-        PartiallySigned,
-        Approved,
-        InProgress,
-        Completed,
-        OverDue,
-        Finalized,
-        Closed
+        Created,            //0
+        PartiallySigned,    //1
+        Approved,           //2
+        InProgress,         //3
+        Completed,          //4
+        OverDue,            //5
+        Finalized,          //6
+        Closed              //7
     }
 
     // The LeasableCar 
@@ -329,16 +329,22 @@ contract LeaseAgreement {
     { 
 
         uint time_now = time_machine.time_now();
+
+        // run a quick final cycle
         uint since_last_cycle = time_now - last_cycle_time;
-
         uint cost_of_this_cycle = since_last_cycle * wei_per_sec;
-
         uint still_due = processRebalance(cost_of_this_cycle);
-
-        return_time = time_now;
-
         last_cycle_time = time_now;
         driver_over_balance = still_due;
+
+        return_time = time_now;
+        bool was_disabled = disableDriverAccess();
+        if (was_disabled == false) {
+            emit DriverAccessFailure(the_car, the_driver, time_now);
+        } else {
+            driver_access_enabled = false;
+        }
+        emit CarReturned(the_car, the_driver, return_time);
 
         if (driver_over_balance > 0) {
             agreement_state = LeaseAgreementStates.OverDue;
@@ -347,13 +353,6 @@ contract LeaseAgreement {
         } else {
             agreement_state = LeaseAgreementStates.Completed;
             emit AgreementCompleted(the_car, the_driver);
-        }
-
-        bool was_disabled = disableDriverAccess();
-        if (was_disabled == false) {
-            emit DriverAccessFailure(the_car, the_driver, time_now);
-        } else {
-            driver_access_enabled = false;
         }
     }
 
@@ -375,9 +374,32 @@ contract LeaseAgreement {
         uint car_balance_due = car_balance;
         car_balance = 0;
         the_car.transfer(car_balance_due);
+        // the_car.closeAgreement.value(car_balance_due);
         emit CarBalanceTransfered(the_car, the_driver, car_balance_due);
+
+        if (agreement_state == LeaseAgreementStates.Completed) {
+            agreement_state = LeaseAgreementStates.Finalized;
+        }
     }
 
+    function driverFinalize()
+        public
+        driver_only("Only the driver can driverFinalize!")
+    {
+        require(agreement_state == LeaseAgreementStates.Finalized,
+            "Driver cannot finalize the agreement yet. Owner first!");
+        require(driver_over_balance == 0, "Driver cannot finalize with an overdue balance");
+
+        // release the driver's deposit
+        uint driver_deposit_refund_due = driver_deposit_amount;
+        driver_deposit_amount = 0; 
+        msg.sender.transfer(driver_deposit_refund_due);
+
+        // return any unused funds balance
+        uint driver_balance_refund_due = driver_balance;
+        driver_balance = 0; 
+        msg.sender.transfer(driver_balance_refund_due);
+    }
 
     function getCarStatus() 
         public
