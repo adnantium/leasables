@@ -11,7 +11,7 @@ contract('TestRequestContract', async function(accounts) {
 
     var test_car1;
     var test_car1_uid;
-    var acct1_uid = accounts[0];
+    var car_owner_uid = accounts[0];
     var acct2_uid = accounts[1];
 
     var g = 4712388;
@@ -25,7 +25,7 @@ contract('TestRequestContract', async function(accounts) {
         // create a car from acct1
         test_car1 = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 99, 
-            {from: acct1_uid, gas: g, gasPrice: gp}
+            {from: car_owner_uid, gas: g, gasPrice: gp}
         );
         test_car1_uid = test_car1.address
         // console.log("test car uid: " + test_car1_uid);
@@ -34,7 +34,7 @@ contract('TestRequestContract', async function(accounts) {
         // It should still work but unstable
         // 
         // LeasableCarArtifact.new('VIN1231', '2019', 'Audi', 'S4', 'Blue', 99, 
-        //     {from: acct1_uid, gas: g, gasPrice: gp})
+        //     {from: car_owner_uid, gas: g, gasPrice: gp})
         //     .then(function(instance) {
         //         test_car1 = instance
         //         console.log(instance.address);
@@ -77,6 +77,26 @@ contract('TestRequestContract', async function(accounts) {
         assert.equal(end_ts, end_timestamp, "End timestamp is messed up!");    
 
         
+
+    });
+
+
+    it("Checking requestDraftAgreement() on deactivated Leasable...", async function() {
+
+        var tx = await test_car1.deactivate({from: car_owner_uid});
+        is_active = await test_car1.is_active.call();
+        assert.equal(is_active, false, "Car should in deactivated!");
+
+        var error_caught = false;
+        try {
+            var tx = await test_car1.
+                requestDraftAgreement(
+                    1543838400, 1544356799, tm.address, 
+                    {from: acct2_uid});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Should not be able to get draft agreement from deactivated Leasable!")
 
     });
 
