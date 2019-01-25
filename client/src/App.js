@@ -153,7 +153,7 @@ class App extends Component {
         <TabPanel>
         <div className="row">
           <div className="col-sm">
-            <LookupCarForm
+            <AgreementLookupForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
               time_machine_spec={this.state.time_machine_spec}
@@ -186,12 +186,9 @@ class App extends Component {
 }
 export default App;
 
-class LookupCarForm extends React.Component {
+class AgreementLookupForm extends React.Component {
   constructor(props) {
     super(props);
-
-    this.handleCarLookup = this.handleCarLookup.bind(this);
-    this.car_address_input = React.createRef();
 
     this.handleAgreementLookup = this.handleAgreementLookup.bind(this);
     this.agreement_address_input = React.createRef();
@@ -202,7 +199,6 @@ class LookupCarForm extends React.Component {
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
-      // all_accounts: this.props.all_accounts,
       account: this.props.account,
       time_machine_spec: this.props.time_machine_spec,
       lease_start_timestamp: 0,
@@ -223,33 +219,6 @@ class LookupCarForm extends React.Component {
       virtual_time: ts_to_str(virtual_time),
     });
 
-  }
-
-  handleCarLookup = async (event) => {
-    event.preventDefault();
-    this.setState({
-      lookup_error: null,
-      the_car: null,
-      lease_agreement: null,
-    });
-
-    var car_address = event.currentTarget.attributes.car_id ?
-      event.currentTarget.attributes.car_id.value :
-      this.car_address_input.current.value;
-
-    let the_car;
-    try {
-      the_car = await this.state.car_contract_spec.at(car_address);
-      update_known_list('known_cars', the_car.address);
-    } catch (error) {
-      console.log(error)
-      this.setState({
-        lookup_error: format_error_message(error.message),
-      })
-      return;
-    }
-
-    this.refreshCarInfo(the_car);
   }
 
   async refreshCarInfo(the_car) {
@@ -294,50 +263,6 @@ class LookupCarForm extends React.Component {
     } catch (error) {
       this.setState({lookup_error: error.message})
     }
-  }
-
-  handleLeaseRequest = async (event) => {
-    event.preventDefault();
-    this.setState({action_error: null})
-
-    var tx;
-    const { account, the_car, lease_agreement_spec } = this.state;
-    if (!the_car) {
-      this.setState({action_error: "Select a car!"});
-      return;
-    }
-    
-    const { requested_end_date, requested_start_date} = this.state;
-    if (!requested_start_date || !requested_end_date) {
-      this.setState({action_error: "Select a lease start & end date!"});
-      return;
-    }
-    var start_timestamp = Math.round(requested_start_date.getTime() / 1000);
-    var end_timestamp = Math.round(requested_end_date.getTime() / 1000);
-
-    var agreement_address;
-    try {
-      tx = await the_car.requestDraftAgreement(
-        start_timestamp, end_timestamp, 
-        this.state.time_machine.address,
-        { from: account });
-
-      agreement_address = tx.logs[0].args.contractAddress;
-    } catch (error) {
-      console.log(error)
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
-      return;
-    }
-    update_known_list("known_agreements", agreement_address);
-    const lease_agreement = await lease_agreement_spec.at(agreement_address);
-
-    this.setState({ 
-      lease_agreement,
-      agreement_address,
-     });
-     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
   async refreshLeaseAgreementInfo(lease_agreement) {
@@ -435,7 +360,7 @@ class LookupCarForm extends React.Component {
     try {
       const tx = await lease_agreement
         .ownerSign({from: account, value: amt_wei});
-        console.log("​LookupCarForm -> handleOwnerDepositSubmit -> tx", tx)
+        console.log("​AgreementLookupForm -> handleOwnerDepositSubmit -> tx", tx)
     } catch (error) {
       console.log(error);
       this.setState({
@@ -462,7 +387,7 @@ class LookupCarForm extends React.Component {
     }
     try {
       var tx = await time_machine.forwardHours(hours, {from: account});
-      console.log("​LookupCarForm -> handleTimeTravel -> tx", tx)
+      console.log("​AgreementLookupForm -> handleTimeTravel -> tx", tx)
     } catch (error) {
       console.log(error);
       this.setState({
@@ -491,7 +416,7 @@ class LookupCarForm extends React.Component {
     const { account, lease_agreement} = this.state;
     
     const amt_wei = web3.utils.toWei('0.1');
-		// console.log("​LookupCarForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
+		// console.log("​AgreementLookupForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
     try {
       const tx = await lease_agreement
         .driverPickup({from: account, value: amt_wei});
@@ -552,7 +477,7 @@ class LookupCarForm extends React.Component {
   }
 
   handleStartDateChange(date) {
-		console.log("​LookupCarForm -> handleStartDateChange -> date", date)
+		console.log("​AgreementLookupForm -> handleStartDateChange -> date", date)
     
     this.setState({
       requested_start_date: date
@@ -560,7 +485,7 @@ class LookupCarForm extends React.Component {
   }
 
   handleEndDateChange(date) {
-		console.log("​LookupCarForm -> handleEndDateChange -> date", date)
+		console.log("​AgreementLookupForm -> handleEndDateChange -> date", date)
     
     this.setState({
       requested_end_date: date
@@ -611,100 +536,29 @@ class LookupCarForm extends React.Component {
     }
   
   
-  car_card() {
-
-    let car_address = this.state.the_car 
-      ? this.state.the_car.address : "";
-
-    var car_subtitle = car_address ?
-      <h6 className="card-subtitle mb-2 text-muted">{car_address}</h6> :
-      <h6 className="card-subtitle mb-2 text-muted">Lookup a car...</h6>;
-    var car_details;
-    if (car_address) {
-      car_details = (
-      <div>
-        <ul>
-          <li>VIN: {this.state.car_vin}</li>
-          <li>Owner: {this.state.car_owner}</li>
-          <li>Daily Rate: {this.state.car_daily_rate}</li>
-        </ul>
-      </div>
-      );
-    } else {
-      car_details = (
-        <div>
-          <form onSubmit={this.handleCarLookup}>
-            <label>
-              <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
-            </label>
-            <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
-          </form>
-        </div>);
-    }
-
-    var request_agreement_form = "";
-    if (!this.state.lease_agreement && this.state.the_car) {
-      request_agreement_form = (
-
-        <div className="card">
-        <div className="card-body">
-          <h5 className="card-title">Request Lease Agreement</h5>
-  
-        <form onSubmit={ this.handleLeaseRequest }>
-          <div className="form-group">
-            <DatePicker
-              name="requested_start_date"
-              selected={this.state.requested_start_date}
-              onChange={this.handleStartDateChange}
-              showTimeSelect
-              dateFormat="MMM d, yyyy h:mm aa"
-              placeholderText="Start at..."
-            />
-            <DatePicker
-              name="requested_end_date"
-              selected={this.state.requested_end_date}
-              onChange={this.handleEndDateChange}
-              showTimeSelect
-              dateFormat="MMM d, yyyy h:mm aa"
-              placeholderText="End at..."
-            />
-          </div>
-          <div className="form-group">
-            <button className="btn btn-success">Get Draft</button>
-          </div>
-        </form>
-        </div>
-      </div>
-        );
-    }
-
-    return (
-    <div className="card">
-      <div className="card-body">
-        <h5 className="card-title">Car</h5>
-          {car_subtitle}
-          {car_details}
-          {request_agreement_form}
-      </div>
-    </div>
-    );
-  }
-
   agreement_card(is_driver_or_owner) {
 
     let agreement_address = this.state.agreement_address 
       ? this.state.agreement_address : "";
 
+    let car_address = this.state.the_car 
+      ? this.state.the_car.address : "";
+
     var agreement_subtitle = agreement_address ?
       <h6 className="card-subtitle mb-2 text-muted">{agreement_address}</h6> :
       <h6 className="card-subtitle mb-2 text-muted">Lookup an agreement...</h6>;
     var agreement_details = agreement_address ?
+      <div>
       <ul>
+        <li>Car: {car_address}</li>
+        <li>VIN: {this.state.car_vin}</li>
         <li>Driver: {this.state.lease_driver}</li>
+        <li>You are: {is_driver_or_owner}</li>
+      </ul>
+      <ul>
         <li>State: {this.state.agreement_state}</li>
         <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
         <li>Daily rate: {this.state.daily_rate} eth</li>
-        <li>You are: {is_driver_or_owner}</li>
         <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
         <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
         <li>Driver balance: {this.state.driver_balance} eth</li>
@@ -716,6 +570,7 @@ class LookupCarForm extends React.Component {
         <li>Returned time: {this.state.return_time}</li>
         <li>Last cycle run: {this.state.last_cycle_time}</li>
       </ul>
+      </div>
       :
       <div>
         <form onSubmit={this.handleAgreementLookup}>
@@ -788,20 +643,7 @@ class LookupCarForm extends React.Component {
     let pickup_disabled = agreement_state === "Approved" && is_driver ? false : true;
     let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
     let finalize_disabled = agreement_state === "Completed" && is_owner ? false : true;
-    let return_disabled = agreement_state === "Completed" && is_driver ? false : true;
-
-    var known_cars = JSON.parse(localStorage.getItem("known_cars"));
-    known_cars = known_cars ? known_cars : [];
-    const known_cars_list = known_cars.map((car_id) =>
-          <li>
-            <a href="/" onClick={this.handleCarLookup} car_id={car_id} className="badge badge-light">
-              {car_id}
-            </a>
-            <a href="/" onClick={this.handleRemoveFromList} address={car_id} list_name="known_cars" className="badge badge-danger">
-              X
-            </a>
-          </li>
-    );
+    let return_disabled = agreement_state === "InProgress" && is_driver ? false : true;
 
     var known_agreements = JSON.parse(localStorage.getItem("known_agreements"));
     known_agreements = known_agreements ? known_agreements : [];
@@ -821,8 +663,6 @@ class LookupCarForm extends React.Component {
       <div className="col-sm">
 
         {lookup_error_text}
-
-        {this.car_card()}
 
         {this.agreement_card(is_driver_or_owner)}
 
@@ -904,13 +744,9 @@ class LookupCarForm extends React.Component {
       </div>
 
         <div className="card">
-            <h5 class="card-header">Lookup Cars &amp; Lease Agreements</h5>
+            <h6 class="card-header">Recently Seen Lease Agreements</h6>
             <div className="card-body">
 
-              <h6 className="card-subtitle mb-2 text-muted">Recent Cars</h6>
-              <ul>{known_cars_list}</ul>
-
-              <h6 className="card-subtitle mb-2 text-muted">Recent Agreements</h6>
               <ul>{known_agreements_list}</ul>
 
             </div>
@@ -1024,16 +860,12 @@ class CarMgmtForm extends React.Component {
   }
 
   handleStartDateChange(date) {
-		console.log("​LookupCarForm -> handleStartDateChange -> date", date)
-    
     this.setState({
       requested_start_date: date
     });
   }
 
   handleEndDateChange(date) {
-		console.log("​LookupCarForm -> handleEndDateChange -> date", date)
-    
     this.setState({
       requested_end_date: date
     });
