@@ -76,12 +76,17 @@ contract('TestSignAgreement', async function(accounts) {
         var tx = await car1_agreement.
             driverSign({from: driver_uid, value: deposit_in});
 
-        assert.equal(tx.logs.length, 1, "driverSign with exact deposit should only have 1 event!");
-        assert.ok(tx.logs[0].args, "No args in tx!");
-        assert.equal(tx.logs[0].event, "DriverSigned", "No DriverSigned event emitted!");
-        assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
-        assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
-        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_in.toString(), "DriverSigned deposit amount in tx response is bad!");
+        assert.equal(tx.logs.length, 2, "driverSign with exact deposit should only have 2 events!");
+
+        assert.equal(tx.logs[0].event, "DriverDepositCollected", "No DriverDepositCollected event emitted!");
+        assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverDepositCollected car_uid is bad!");
+        assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverDepositCollected driver_uid is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_in.toString(), "DriverDepositCollected deposit amount is bad!");
+
+        assert.equal(tx.logs[1].event, "DriverSigned", "No DriverSigned event emitted!");
+        assert.equal(tx.logs[1].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
+        assert.equal(tx.logs[1].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
+        assert.equal(tx.logs[1].args.deposit_amount.toString(), deposit_required.toString(), "DriverSigned deposit amount is bad!");
 
         var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), deposit_in.toString(), "Driver depoist amount is not right!");
@@ -90,7 +95,7 @@ contract('TestSignAgreement', async function(accounts) {
         assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0 after exact deposit!");
 
         var agreement_state = await car1_agreement.agreement_state.call();
-        assert.equal(agreement_state.toNumber(), 1, "Agreement should be in PartiallySigned(1) state!");
+        assert.equal(agreement_state.toNumber(), 1, "Agreement should be in DriverSigned(1) state!");
 
     });
 
@@ -107,20 +112,23 @@ contract('TestSignAgreement', async function(accounts) {
         var tx = await car1_agreement.
             driverSign({from: driver_uid, value: deposit_in});
 
-        assert.equal(tx.logs.length, 2, "driverSign with extra deposit should have 2 events!");
+        assert.equal(tx.logs.length, 3, "driverSign with extra deposit should have 3 events!");
 
-        assert.ok(tx.logs[0].args, "No args in tx[0]!");
-        assert.equal(tx.logs[0].event, "DriverSigned", "No DriverSigned event emitted!");
-        assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
-        assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
-        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_required.toString(), "DriverSigned deposit amount is bad!");
+        assert.equal(tx.logs[0].event, "DriverDepositCollected", "No DriverDepositCollected event emitted!");
+        assert.equal(tx.logs[0].args.the_car, car1_uid, "DriverDepositCollected car_uid is bad!");
+        assert.equal(tx.logs[0].args.the_driver, driver_uid, "DriverDepositCollected driver_uid is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_required.toString(), "DriverDepositCollected deposit amount is bad!");
 
-        assert.ok(tx.logs[1].args, "No args in tx[1]!");
-        assert.equal(tx.logs[1].event, "DriverBalanceUpdated", "No DriverBalanceUpdated event emitted!");
-        assert.equal(tx.logs[1].args.the_car, car1_uid, "DriverBalanceUpdated car_uid is bad!");
-        assert.equal(tx.logs[1].args.the_driver, driver_uid, "DriverBalanceUpdated driver_uid is bad!");
+        assert.equal(tx.logs[1].event, "DriverSigned", "No DriverSigned event emitted!");
+        assert.equal(tx.logs[1].args.the_car, car1_uid, "DriverSigned car_uid is bad!");
+        assert.equal(tx.logs[1].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
+        assert.equal(tx.logs[1].args.deposit_amount.toString(), deposit_required.toString(), "DriverSigned deposit amount is bad!");
+
+        assert.equal(tx.logs[2].event, "DriverBalanceUpdated", "No DriverBalanceUpdated event emitted!");
+        assert.equal(tx.logs[2].args.the_car, car1_uid, "DriverBalanceUpdated car_uid is bad!");
+        assert.equal(tx.logs[2].args.the_driver, driver_uid, "DriverBalanceUpdated driver_uid is bad!");
         var expected_balance = deposit_in - deposit_required;
-        assert.equal(tx.logs[1].args.new_balance.toString(), expected_balance.toString(), "DriverBalanceUpdated baalnce amount is bad!");
+        assert.equal(tx.logs[2].args.new_balance.toString(), expected_balance.toString(), "DriverBalanceUpdated baalnce amount is bad!");
 
         var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), deposit_required.toString(), "Driver deposit amount is not right!");
@@ -188,10 +196,24 @@ contract('TestSignAgreement', async function(accounts) {
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
 
-        var deposit_required = await car1_agreement.owner_deposit_required.call();
+        // check that owner casnnot sign before driver
+        var error_caught = false;
+        try {
+            var tx = await car1_agreement.
+                ownerSign({from: car_owner_uid, value: deposit_in});
+        } catch(error) {
+            error_caught = true;
+        }
+        assert.ok(error_caught === true, "Owner should not be able to sign agreement before the driver!")
+
+        // driver sign
+        var deposit_required = await car1_agreement.driver_deposit_required.call();
+        var tx = await car1_agreement.
+            driverSign({from: driver_uid, value: deposit_required});
 
         // Check min deposit required
         // putting in less than required $
+        var deposit_required = await car1_agreement.owner_deposit_required.call();
         var deposit_in = deposit_required * 0.5;
         var error_caught = false;
         try {
@@ -245,19 +267,30 @@ contract('TestSignAgreement', async function(accounts) {
 
         const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
 
-        var deposit_required = await car1_agreement.owner_deposit_required.call();
-        // deposit_required = deposit_required.toNumber();
-        deposit_in = deposit_required;
+        // driver sign
+        var driver_deposit_required = await car1_agreement.driver_deposit_required.call();
+        var tx = await car1_agreement.
+            driverSign({from: driver_uid, value: driver_deposit_required});
+
+        var owner_deposit_required = await car1_agreement.owner_deposit_required.call();
+        deposit_in = owner_deposit_required;
         var tx = await car1_agreement.
             ownerSign({from: car_owner_uid, value: deposit_in});
 
-        assert.equal(tx.logs.length, 1, "ownerSign with exact deposit should only have 1 event!");
-        assert.ok(tx.logs[0].args, "No args in tx!");
-        assert.equal(tx.logs[0].event, "OwnerSigned", "No OwnerSigned event emitted!");
-        assert.equal(tx.logs[0].args.the_car, car1_uid, "OwnerSigned car_uid is bad!");
-        assert.equal(tx.logs[0].args.the_driver, driver_uid, "OwnerSigned driver_uid is bad!");
-        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_in.toString(), "OwnerSigned deposit amount in tx response is bad!");
+        assert.equal(tx.logs.length, 3, "ownerSign with exact deposit should only have 3 events!");
 
+        assert.equal(tx.logs[0].event, "OwnerDepositCollected", "No OwnerDepositCollected event emitted!");
+        assert.equal(tx.logs[0].args.the_car, car1_uid, "OwnerSOwnerDepositCollectedigned car_uid is bad!");
+        assert.equal(tx.logs[0].args.the_driver, driver_uid, "OwnerSOwnerDepositCollectedigned driver_uid is bad!");
+        assert.equal(tx.logs[0].args.deposit_amount.toString(), deposit_in.toString(), "OwnerDepositCollected deposit amount is bad!");
+
+        assert.equal(tx.logs[1].event, "OwnerSigned", "No OwnerSigned event emitted!");
+        assert.equal(tx.logs[1].args.the_car, car1_uid, "OwnerSigned car_uid is bad!");
+        assert.equal(tx.logs[1].args.the_driver, driver_uid, "OwnerSigned driver_uid is bad!");
+        assert.equal(tx.logs[1].args.deposit_amount.toString(), deposit_in.toString(), "OwnerSigned deposit amount is bad!");
+
+        assert.equal(tx.logs[2].event, "AgreementApproved", "No AgreementApproved event emitted!");
+        
         var owner_deposit_amount = await car1_agreement.owner_deposit_amount.call();
         assert.equal(owner_deposit_amount.toString(), deposit_in.toString(), "Owner deposit amount is not right!");
 
@@ -265,7 +298,4 @@ contract('TestSignAgreement', async function(accounts) {
         assert.equal(car_balance_amount.toString(), "0", "Car balance amount should be 0 after exact deposit!");
 
     });
-
-    // it("Checking driverSign ...", async function() {
-    // });
 });

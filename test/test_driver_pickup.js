@@ -19,7 +19,7 @@ async function create_agreement(the_car, start_timestamp, end_timestamp, driver_
     return agreement_promise;
 }
 
-contract('TestAgreementTiming', async function(accounts) {
+contract('TestDriverPickup', async function(accounts) {
 
     var car1;
     var car1_uid;
@@ -76,7 +76,7 @@ contract('TestAgreementTiming', async function(accounts) {
             driverSign({from: driver_uid, value: driver_deposit_required});
 
         var agreement_state = await car1_agreement.agreement_state.call();
-        assert.equal(agreement_state.toNumber(), 1, "Agreement should be in PartiallySigned(1) state!");
+        assert.equal(agreement_state.toNumber(), 1, "Agreement should be in DriverSigned(1) state!");
 
         var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), driver_deposit_required.toString(), "Driver depoist amount is not right!");
@@ -116,7 +116,8 @@ contract('TestAgreementTiming', async function(accounts) {
         // now its pickup time
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
-        assert.equal(tx.logs[0].event, "AgreementStarted", "AgreementStarted event not emitted!")
+        assert.equal(tx.logs[0].event, "CarPickedUp", "CarPickedUp event not emitted!")
+        assert.equal(tx.logs[1].event, "AgreementStarted", "AgreementStarted event not emitted!")
         
         var agreement_state = await car1_agreement.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 3, "Agreement should be in InProgress(3) state!");

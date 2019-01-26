@@ -108,8 +108,9 @@ contract('TestProcessCycle', async function(accounts) {
         // Dec 4th 1200pm ------------------------------------------
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         tx = await agreement.driverPickup({from: driver_uid, value: 0});
-        assert.equal(tx.logs[0].event, "AgreementStarted", "AgreementStarted event not emitted!")
-    
+        assert.equal(tx.logs[0].event, "CarPickedUp", "CarPickedUp event not emitted!")
+        assert.equal(tx.logs[1].event, "AgreementStarted", "AgreementStarted event not emitted!")
+
         var payment_amount = web3.utils.toWei(2+'');
         tx = await agreement.driverPayment({
             from: driver_uid,

@@ -130,12 +130,12 @@ contract('TestDriverReturn', async function(accounts) {
         tx = await agreement.driverReturn({from: driver_uid});
         // console.log("​catch -> tx", tx)
         // TODO: check for events
-        // AgreementCompleted, DriverAccessDisabled, 
+        // AgreementCarReturned, DriverAccessDisabled, 
         // assert.equal(tx.logs[n].event, "XX event not emitted!")
         // assert.equal(tx.logs[n].args.xxx.toString(), web3.utils.toWei('2'), "XXX(xxx) should be ...!")
 
         var agreement_state = await agreement.agreement_state.call();
-        assert.equal(agreement_state.toNumber(), 4, "Agreement should be in Completed(4) state after return!");
+        assert.equal(agreement_state.toNumber(), 4, "Agreement should be in CarReturned(4) state after return!");
         
         var driver_balance_amount = await agreement.driver_balance();
         assert_approx_wei_equal(driver_balance_amount, expected_driver_balance, "Driver balance after driverReturn() is wrong!")

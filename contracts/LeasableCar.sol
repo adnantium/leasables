@@ -35,7 +35,7 @@ contract LeasableCar is Leasable {
     uint public minimum_lease_days = 1;
 
     event LeaseAgreementCreated(address contractAddress);
-    event LeaseAgreementClosed(address contractAddress);
+    event LeaseAgreementEnded(address contractAddress);
 
     constructor(
             string memory _VIN,
@@ -158,7 +158,7 @@ contract LeasableCar is Leasable {
     // {
     //     // TODO require(msg.sender == a known contract!)
 
-    //     // emit LeaseAgreementClosed(_lease_agreement_address);
-    //     emit LeaseAgreementClosed(msg.sender);
+    //     // emit LeaseAgreementEnded(_lease_agreement_address);
+    //     emit LeaseAgreementEnded(msg.sender);
     // }
 }

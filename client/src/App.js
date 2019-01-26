@@ -29,8 +29,14 @@ function ts_to_str(epoch_secs_bignumber) {
 }
 
 function agreementStateToStr(state_num) {
-  const states = [ "Created", "PartiallySigned", "Approved", 
-    "InProgress", "Completed", "OverDue", "Finalized", "Closed"];
+  const states = [ 
+    "Draft", 
+    "DriverSigned", 
+    "Approved", 
+    "InProgress", 
+    "CarReturned", 
+    "Finalized", 
+    "Ended"];
   return states[state_num];
 }
 
@@ -177,6 +183,7 @@ class App extends Component {
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
               time_machine_spec={this.state.time_machine_spec}
+              web3={this.state.web3}
               account={this.state.account} />
           </div>
         </div>
@@ -220,14 +227,13 @@ class AgreementLookupForm extends React.Component {
     this.handleAgreementLookup = this.handleAgreementLookup.bind(this);
     this.agreement_address_input = React.createRef();
 
-    this.handleStartDateChange = this.handleStartDateChange.bind(this);
-    this.handleEndDateChange = this.handleEndDateChange.bind(this);
-
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
       account: this.props.account,
       time_machine_spec: this.props.time_machine_spec,
+      web3: this.props.web3,
+
       lease_start_timestamp: 0,
       lease_end_timestamp: 0,
       lease_driver: 0,
@@ -246,21 +252,6 @@ class AgreementLookupForm extends React.Component {
       virtual_time: ts_to_str(virtual_time),
     });
 
-  }
-
-  async refreshCarInfo(the_car) {
-
-    let car_vin = await the_car.VIN.call();
-    let car_owner = await the_car.owner.call();
-    let car_daily_rate_wei = await the_car.daily_rate.call();
-    let car_daily_rate = weiToEther(car_daily_rate_wei);
-
-    this.setState({ 
-      the_car,
-      car_vin,
-      car_owner,
-      car_daily_rate,
-     });
   }
 
   handleAgreementLookup = async (event) => {
@@ -316,7 +307,18 @@ class AgreementLookupForm extends React.Component {
       let last_cycle_time = await lease_agreement.last_cycle_time();
       let contract_creator = await lease_agreement.contract_creator();
 
+      let agreement_balance_wei = await this.state.web3.eth.getBalance(lease_agreement.address)
+
+      var car_address = await lease_agreement.the_car();
+      let the_car = await this.state.car_contract_spec.at(car_address);
+
+      let car_vin = await the_car.VIN.call();
+      let car_owner = await the_car.owner.call();
+
       this.setState({ 
+        the_car,
+        car_vin,
+        car_owner,
         lease_start_timestamp: ts_to_str(lease_start_timestamp),
         lease_end_timestamp: ts_to_str(lease_end_timestamp),
         agreement_state: agreementStateToStr(agreement_state),
@@ -328,6 +330,7 @@ class AgreementLookupForm extends React.Component {
         driver_balance: weiToEther(driver_balance),
         driver_over_balance: weiToEther(driver_over_balance),
         car_balance: weiToEther(car_balance),
+        agreement_balance: weiToEther(agreement_balance_wei),
         // is_started: ts_to_str(is_started),
         // is_ended: ts_to_str(is_ended),
         daily_rate: weiToEther(daily_rate),
@@ -343,10 +346,8 @@ class AgreementLookupForm extends React.Component {
     }
 
     try {
-      var car_address = await lease_agreement.the_car();
-      let the_car = await this.state.car_contract_spec.at(car_address);
 
-      this.refreshCarInfo(the_car);
+      // this.refreshCarInfo(the_car);
     } catch (error) {
       console.log(error)
       this.setState({ lookup_error: error.message, })
@@ -387,7 +388,6 @@ class AgreementLookupForm extends React.Component {
     try {
       const tx = await lease_agreement
         .ownerSign({from: account, value: amt_wei});
-        console.log("​AgreementLookupForm -> handleOwnerDepositSubmit -> tx", tx)
     } catch (error) {
       console.log(error);
       this.setState({
@@ -414,7 +414,6 @@ class AgreementLookupForm extends React.Component {
     const { account, lease_agreement} = this.state;
     
     const amt_wei = web3.utils.toWei('0.1');
-		// console.log("​AgreementLookupForm -> handleDriverPickupSubmit -> amt_wei", amt_wei)
     try {
       const tx = await lease_agreement
         .driverPickup({from: account, value: amt_wei});
@@ -474,24 +473,8 @@ class AgreementLookupForm extends React.Component {
     this.refreshLeaseAgreementInfo(lease_agreement);
   }
 
-  handleStartDateChange(date) {
-		console.log("​AgreementLookupForm -> handleStartDateChange -> date", date)
-    
-    this.setState({
-      requested_start_date: date
-    });
-  }
-
-  handleEndDateChange(date) {
-		console.log("​AgreementLookupForm -> handleEndDateChange -> date", date)
-    
-    this.setState({
-      requested_end_date: date
-    });
-  }
-
     // driver return
-    handleDriverReturn = async (event) => {
+  handleDriverReturn = async (event) => {
       event.preventDefault();
       this.setState({action_error: null})
   
@@ -513,7 +496,7 @@ class AgreementLookupForm extends React.Component {
   
   
     // owner finalize
-    handleOwnerFinalize = async (event) => {
+  handleOwnerFinalize = async (event) => {
       event.preventDefault();
       this.setState({action_error: null})
   
@@ -563,6 +546,7 @@ class AgreementLookupForm extends React.Component {
         <li>Driver balance: {this.state.driver_balance} eth</li>
         <li>Driver over balance: {this.state.driver_over_balance} eth</li>
         <li>Car balance: {this.state.car_balance} eth</li>
+        <li>Contract's balance: {this.state.agreement_balance} eth</li>
         <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
         <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
         <li>Picked up time: {this.state.pickup_time}</li>
@@ -616,33 +600,31 @@ class AgreementLookupForm extends React.Component {
 
     let driver_deposit_disabled = true;
     let owner_deposit_disabled = true;
-    let lease_request_disabled = false;
     let payment_disabled = false;
 
-
     if (this.state.lease_agreement) {
-      lease_request_disabled = true;
       if (account === this.state.lease_driver) {
         is_driver = true;
-        if (agreement_state === "Created" || agreement_state === "PartiallySigned") {
+        is_driver_or_owner = "The Driver";
+        if (agreement_state === "Draft") {
           driver_deposit_disabled = false;
         }
-        is_driver_or_owner = "The Driver";
       } else if (account ===  this.state.car_owner) {
         is_owner = true;
-        if (agreement_state === "Created" || agreement_state === "PartiallySigned") {
+        is_driver_or_owner = "The Car Owner";
+        if (agreement_state === "DriverSigned") {
           owner_deposit_disabled = false;
         }
-        is_driver_or_owner = "The Car Owner";
       } else {
         is_driver_or_owner = "Not Owner or Driver!";
       }
     }
 
     let pickup_disabled = agreement_state === "Approved" && is_driver ? false : true;
-    let process_cycle_disabled = agreement_state === "InProgress" ? false : true;
-    let finalize_disabled = agreement_state === "Completed" && is_owner ? false : true;
+    let process_cycle_disabled = agreement_state === "InProgress" && is_owner ? false : true;
     let return_disabled = agreement_state === "InProgress" && is_driver ? false : true;
+    let owner_finalize_disabled = agreement_state === "CarReturned" && is_owner ? false : true;
+    let driver_finalize_disabled = agreement_state === "Finalized" && is_driver ? false : true;
 
     var known_agreements = JSON.parse(localStorage.getItem("known_agreements"));
     known_agreements = known_agreements ? known_agreements : [];
@@ -684,11 +666,6 @@ class AgreementLookupForm extends React.Component {
 
             <div class="btn-toolbar mb-3" role="toolbar">
               <div class="btn-group mr-2" role="group">
-                <button onClick={this.handleLeaseRequest} type="submit" className="btn btn-primary btn-sm" disabled={lease_request_disabled}>
-                  Request Lease
-                </button>
-              </div>
-              <div class="btn-group mr-2" role="group">
                 <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
                   Driver Sign+Deposit
                 </button>
@@ -716,6 +693,13 @@ class AgreementLookupForm extends React.Component {
                   Driver Return
                 </button>
               </div>
+
+              <div class="btn-group mr-2" role="group">
+                <button onClick={this.handleDriverFinalize} type="submit" className="btn btn-primary btn-sm" disabled={driver_finalize_disabled}>
+                  Driver Finalize
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
@@ -738,7 +722,7 @@ class AgreementLookupForm extends React.Component {
               </button>
               </div>
               <div class="btn-group mr-2" role="group">
-              <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={finalize_disabled}>
+              <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={owner_finalize_disabled}>
                 Owner Finalize
               </button>
               </div>

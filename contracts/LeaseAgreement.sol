@@ -6,14 +6,13 @@ import "./TimeMachine.sol";
 contract LeaseAgreement {
 
     enum LeaseAgreementStates {
-        Created,            //0
-        PartiallySigned,    //1
-        Approved,           //2
-        InProgress,         //3
-        Completed,          //4
-        OverDue,            //5
-        Finalized,          //6
-        Closed              //7
+        Draft,        //0
+        DriverSigned, //1
+        Approved,     //2
+        InProgress,   //3
+        CarReturned,  //4
+        Finalized,    //5
+        Ended         //6
     }
 
     // The LeasableCar 
@@ -24,7 +23,7 @@ contract LeaseAgreement {
     // this is usually the car but not neccasarily
     address public contract_creator;
 
-    LeaseAgreementStates public agreement_state = LeaseAgreementStates.Created;
+    LeaseAgreementStates public agreement_state = LeaseAgreementStates.Draft;
     uint public start_timestamp;
     uint public end_timestamp;
 
@@ -65,20 +64,30 @@ contract LeaseAgreement {
     event AgreementStarted(address the_car, address the_driver);
     event AgreementCompleted(address the_car, address the_driver);
     event AgreementOverDue(address the_car, address the_driver, uint driver_over_balance);
-    event AgreementFinalized(address the_car, address the_driver);
+    event AgreementOwnerFinalized(address the_car, address the_driver);
+    event AgreementDriverFinalized(address the_car, address the_driver);
+    event AgreementEnded(address the_car, address the_driver);
 
     // balance update events
+    event DriverDepositCollected(address the_car, address the_driver, uint256 deposit_amount);
+    event OwnerDepositCollected(address the_car, address the_owner, address the_driver, uint256 deposit_amount);
+    
     event DriverBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
     event DriverBalanceLow(address the_car, address the_driver, uint256 the_balance, uint balance_needed);
     event DriverOverBalance(address the_car, address the_driver, uint256 the_over_balance);
     event CarBalanceUpdated(address the_car, address the_driver, uint256 new_balance);
+
     event CycleProcessed(address the_car, address the_driver, uint start_time, uint end_time, uint256 cycle_cost);
-    event OwnerDepositReturned(address the_car, address the_driver, uint owner_deposit_refund_due);
-    event CarBalanceTransfered(address the_car, address the_driver, uint car_balance_due);
+
+    event DriverDepositReturned(address the_car, address the_driver, uint deposit_refund_amount);
+    event OwnerDepositReturned(address the_car, address the_driver, uint deposit_refund_amount);
+    event CarBalanceTransfered(address the_car, address the_driver, uint car_balance);
 
 
     // External (physical) events
+    event CarPickedUp(address the_car, address the_driver, uint256 the_time);
     event CarReturned(address the_car, address the_driver, uint256 the_time);
+
     event DriverAccessEnabled(address the_car, address the_driver, uint256 the_time);
     event DriverAccessDisabled(address the_car, address the_driver, uint256 the_time);
     event DriverAccessFailure(address the_car, address the_driver, uint256 the_time);
@@ -167,15 +176,12 @@ contract LeaseAgreement {
         require(msg.value >= driver_deposit_required, "Insufficient deposit amount!");
 
         driver_deposit_amount = driver_deposit_required;
+        emit DriverDepositCollected(the_car, the_driver, driver_deposit_amount);
+
         is_driver_signed = true;
         emit DriverSigned(the_car, the_driver, driver_deposit_amount);
 
-        if (is_owner_signed) {
-            agreement_state = LeaseAgreementStates.Approved;
-            emit AgreementApproved(the_car, the_driver);
-        } else {
-            agreement_state = LeaseAgreementStates.PartiallySigned;
-        }
+        agreement_state = LeaseAgreementStates.DriverSigned;
 
         // add any extra $ to the driver's balance
         if (msg.value > driver_deposit_required) {
@@ -189,25 +195,18 @@ contract LeaseAgreement {
         payable 
         owner_only("Only owner can sign agreement as the owner!")
     {
+        require(is_driver_signed == true, "Car owner cannot sign agreement before the driver");
         require(is_owner_signed == false, "Agreement has already been signed by owner");
         require(msg.value >= owner_deposit_required, "Insufficient deposit amount!");
 
-        owner_deposit_amount = owner_deposit_required;
+        owner_deposit_amount = msg.value;
+        emit OwnerDepositCollected(the_car, msg.sender, the_driver, owner_deposit_amount);
+
         is_owner_signed = true;
         emit OwnerSigned(the_car, the_driver, owner_deposit_amount);
 
-        if (is_driver_signed) {
-            agreement_state = LeaseAgreementStates.Approved;
-            emit AgreementApproved(the_car, the_driver);
-        } else {
-            agreement_state = LeaseAgreementStates.PartiallySigned;
-        }
-
-        // add any extra $ to the car's balance
-        if (msg.value > owner_deposit_required) {
-            car_balance = msg.value - owner_deposit_required;
-            emit CarBalanceUpdated(the_car, the_driver, car_balance);
-        }
+        agreement_state = LeaseAgreementStates.Approved;
+        emit AgreementApproved(the_car, the_driver);
     }
 
     function driverPickup()
@@ -223,10 +222,11 @@ contract LeaseAgreement {
         // require: car location is right (?)
 
         uint time_now = time_machine.time_now();
+
         pickup_time = time_now;
         last_cycle_time = pickup_time;
+        emit CarPickedUp(the_car, the_driver, time_now);
 
-        // change agrement state -> Started
         agreement_state = LeaseAgreementStates.InProgress;
         emit AgreementStarted(the_car, the_driver);
 
@@ -272,16 +272,39 @@ contract LeaseAgreement {
 
             // take all money from driver's balance
             car_balance += driver_balance;
+            emit CarBalanceUpdated(the_car, the_driver, car_balance);
+
             uint still_due = cost_of_this_cycle - driver_balance;
+
             driver_balance = 0;
+            emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
 
             // take any remaining money needed from the driver's deposit
-            if (still_due > driver_deposit_amount) {
-                car_balance += driver_deposit_amount;
-                still_due = still_due - driver_deposit_amount;
-                driver_deposit_amount = 0;
-                driver_over_balance = still_due;
-                emit DriverOverBalance(the_car, the_driver, driver_over_balance);
+            if (still_due > 0) 
+            {
+                if (still_due <= driver_deposit_amount) {
+                    // some deposit money will be left
+                    driver_deposit_amount -= still_due;
+                    // emit DriverBalanceUpdated(the_car, the_driver, driver_balance);
+
+                    car_balance += still_due;                    
+                    emit CarBalanceUpdated(the_car, the_driver, car_balance);
+
+                    still_due = 0;
+
+                } else {
+                    // still_due is more than driver_deposit_amount!
+                    // take what we can
+
+                    car_balance += driver_deposit_amount;
+                    emit CarBalanceUpdated(the_car, the_driver, car_balance);
+
+                    still_due = still_due - driver_deposit_amount;
+                    driver_over_balance = still_due;
+                    emit DriverOverBalance(the_car, the_driver, driver_over_balance);
+
+                    driver_deposit_amount = 0;
+                }
             }
             return still_due;
 
@@ -327,6 +350,8 @@ contract LeaseAgreement {
         public 
         driver_only("Only the driver can do return!")
     { 
+        require(agreement_state == LeaseAgreementStates.InProgress,
+            "Driver cannot return the car until after the agreement is InProgress");
 
         uint time_now = time_machine.time_now();
 
@@ -344,14 +369,13 @@ contract LeaseAgreement {
         } else {
             driver_access_enabled = false;
         }
+
+        agreement_state = LeaseAgreementStates.CarReturned;
         emit CarReturned(the_car, the_driver, return_time);
 
         if (driver_over_balance > 0) {
-            agreement_state = LeaseAgreementStates.OverDue;
             emit AgreementOverDue(the_car, the_driver, driver_over_balance);
-
         } else {
-            agreement_state = LeaseAgreementStates.Completed;
             emit AgreementCompleted(the_car, the_driver);
         }
     }
@@ -360,9 +384,8 @@ contract LeaseAgreement {
         public
         owner_only("Only the car owner can ownerFinalize!")
     {
-        require(agreement_state == LeaseAgreementStates.Completed || 
-            agreement_state == LeaseAgreementStates.OverDue,
-            "Agreement can only be finalized when its Completed or OverDue");
+        require(agreement_state == LeaseAgreementStates.CarReturned,
+            "Agreement can only be finalized after CarReturned");
 
         // release the owner's deposit
         uint owner_deposit_refund_due = owner_deposit_amount;
@@ -374,12 +397,10 @@ contract LeaseAgreement {
         uint car_balance_due = car_balance;
         car_balance = 0;
         the_car.transfer(car_balance_due);
-        // the_car.closeAgreement.value(car_balance_due);
         emit CarBalanceTransfered(the_car, the_driver, car_balance_due);
 
-        if (agreement_state == LeaseAgreementStates.Completed) {
-            agreement_state = LeaseAgreementStates.Finalized;
-        }
+        agreement_state = LeaseAgreementStates.Finalized;
+        emit AgreementOwnerFinalized(the_car, the_driver);
     }
 
     function driverFinalize()
@@ -400,7 +421,9 @@ contract LeaseAgreement {
         driver_balance = 0; 
         msg.sender.transfer(driver_balance_refund_due);
 
-        agreement_state = LeaseAgreementStates.Closed;
+        agreement_state = LeaseAgreementStates.Ended;
+        emit AgreementDriverFinalized(the_car, the_driver);
+
     }
 
     function getCarStatus() 

@@ -114,7 +114,6 @@ contract('TestDriverReturn', async function(accounts) {
 
 
         tx = await agreement.ownerFinalize({from: car_owner_uid});
-		// console.log(tx)
 
         var in_car_owner_wallet_after = await web3.eth.getBalance(car_owner_uid);
         assert_approx_wei_equal(in_car_owner_wallet_after, expected_after_owner_finalize, 1000, "Owner funds balance after ownerFinalize is wrong!")
@@ -123,12 +122,11 @@ contract('TestDriverReturn', async function(accounts) {
         assert_approx_wei_equal(in_car_wallet_after, expected_after_car_finalize, 10, "Car funds balance after ownerFinalize is wrong!")
 
         var agreement_state = await agreement.agreement_state.call();
-        assert.equal(agreement_state.toNumber(), 6, "Agreement should be in Finalized(6) state after ownerFinalize() with positive balance!");
+        assert.equal(agreement_state.toNumber(), 5, "Agreement should be in Finalized(5) state after ownerFinalize() with positive balance!");
     
 
         // before driverFinalize
         var driver_balance = await agreement.driver_balance();
-		console.log('​driver_balance', driver_balance.toString());
         var in_driver_wallet_before = await web3.eth.getBalance(driver_uid);
         var expected_after_driver_finalize = BigInt(in_driver_wallet_before) + BigInt(driver_balance);
 
@@ -166,9 +164,6 @@ contract('TestDriverReturn', async function(accounts) {
 
 
         tx = await agreement.ownerFinalize({from: car_owner_uid});
-        // tx = await agreement.carFinalize({from: car_owner_uid});
-        // tx = await the_car.closeAgreement(agreement.address, {from: car1_uid});
-		console.log(tx)
 
         var in_car_owner_wallet_after = await web3.eth.getBalance(car_owner_uid);
         assert_approx_wei_equal(in_car_owner_wallet_after, expected_after_owner_finalize, 1000, "Owner funds balance after ownerFinalzie is wrong!")
