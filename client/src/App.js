@@ -18,32 +18,11 @@ import TimeTravelCard from "./TimeTravelCard.js";
 var truffle_contract = require("truffle-contract");
 var web3 = require("web3");
 
-
-function weiToEther(weis) {
-  return web3.utils.fromWei(weis.toString());
-}
-
-function ts_to_str(epoch_secs_bignumber) {
-  let epoch_ms = epoch_secs_bignumber.toNumber() * 1000;
-  return new Date(epoch_ms).toLocaleString();
-}
-
-function agreementStateToStr(state_num) {
-  const states = [ 
-    "Draft", 
-    "DriverSigned", 
-    "Approved", 
-    "InProgress", 
-    "CarReturned", 
-    "Finalized", 
-    "Ended"];
-  return states[state_num];
-}
-
-function format_error_message(msg) {
-  const e = 'Error: Error:';
-  return msg.indexOf(e) > 0 ? msg.slice(msg.lastIndexOf('Error')) : msg;
-}
+const helpers = require('./helpers.js');
+const weiToEther = helpers.weiToEther;
+const ts_to_str = helpers.ts_to_str;
+const agreementStateToStr = helpers.agreementStateToStr;
+const format_error_message = helpers.format_error_message;
 
 function update_known_list(list_name, address) {
     // add the address to known_cars list if not there
