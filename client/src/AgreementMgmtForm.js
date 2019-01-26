@@ -134,16 +134,6 @@ class AgreementMgmtForm extends React.Component {
       this.setState({ lookup_error: error.message, })
       return;
     }
-
-    try {
-
-      // this.refreshCarInfo(the_car);
-    } catch (error) {
-      console.log(error)
-      this.setState({ lookup_error: error.message, })
-      return;
-    }
-
   }
 
   handleDriverDepositSubmit = async (event) => {
@@ -154,14 +144,10 @@ class AgreementMgmtForm extends React.Component {
 
     const amt_wei = web3.utils.toWei('' + driver_deposit_required);
     try {
-      const tx = await lease_agreement
-        .driverSign({from: account, value: amt_wei});
-      console.log(tx);
+      const tx = await lease_agreement.driverSign({from: account, value: amt_wei});
     } catch (error) {
       console.log(error);
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
+      this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
@@ -176,13 +162,9 @@ class AgreementMgmtForm extends React.Component {
 
     const amt_wei = web3.utils.toWei('' + owner_deposit_required);
     try {
-      const tx = await lease_agreement
-        .ownerSign({from: account, value: amt_wei});
+      const tx = await lease_agreement.ownerSign({from: account, value: amt_wei});
     } catch (error) {
-      console.log(error);
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
+      this.setState({ action_error: format_error_message(error.message),})
       return;
     }
 
@@ -190,7 +172,6 @@ class AgreementMgmtForm extends React.Component {
   }
 
   handleRemoveFromList(event) {
-
     let address = event.target.attributes.address.value;
     let list_name = event.target.attributes.list_name.value;
     remove_from_known_list(list_name, address);
@@ -227,14 +208,10 @@ class AgreementMgmtForm extends React.Component {
     let amount = event.currentTarget.attributes.amount.value;
     const amt_wei = web3.utils.toWei('' + amount);
     try {
-      const tx = await lease_agreement
-        .driverPayment({from: account, value: amt_wei});
-      console.log(tx);
+      const tx = await lease_agreement.driverPayment({from: account, value: amt_wei});
     } catch (error) {
       console.log(error);
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
+      this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
@@ -249,14 +226,10 @@ class AgreementMgmtForm extends React.Component {
     const { account, lease_agreement } = this.state;
 
     try {
-      const tx = await lease_agreement
-        .processCycle({from: account});
-      console.log(tx);
+      const tx = await lease_agreement.processCycle({from: account});
     } catch (error) {
       console.log(error);
-      this.setState({
-        action_error: format_error_message(error.message),
-      })
+      this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
@@ -271,14 +244,10 @@ class AgreementMgmtForm extends React.Component {
       const { account, lease_agreement } = this.state;
       
       try {
-        const tx = await lease_agreement
-          .driverReturn({from: account});
-        console.log(tx);
+        const tx = await lease_agreement.driverReturn({from: account});
       } catch (error) {
         console.log(error);
-        this.setState({
-          action_error: format_error_message(error.message),
-        })
+        this.setState({ action_error: format_error_message(error.message), })
         return;
       }
       this.refreshLeaseAgreementInfo(lease_agreement);
@@ -293,14 +262,10 @@ class AgreementMgmtForm extends React.Component {
       const { account, lease_agreement } = this.state;
       
       try {
-          const tx = await lease_agreement
-            .ownerFinalize({from: account});
-          console.log(tx);
+          const tx = await lease_agreement.ownerFinalize({from: account});
       } catch (error) {
           console.log(error);
-          this.setState({
-              action_error: format_error_message(error.message),
-          })
+          this.setState({ action_error: format_error_message(error.message), })
           return;
       }
       this.refreshLeaseAgreementInfo(lease_agreement);
@@ -315,14 +280,11 @@ class AgreementMgmtForm extends React.Component {
       const { account, lease_agreement } = this.state;
       
       try {
-          const tx = await lease_agreement
-            .driverFinalize({from: account});
+          const tx = await lease_agreement.driverFinalize({from: account});
           console.log(tx);
       } catch (error) {
           console.log(error);
-          this.setState({
-              action_error: format_error_message(error.message),
-          })
+          this.setState({ action_error: format_error_message(error.message), })
           return;
       }
       this.refreshLeaseAgreementInfo(lease_agreement);
@@ -336,12 +298,9 @@ class AgreementMgmtForm extends React.Component {
     let car_address = this.state.the_car 
       ? this.state.the_car.address : "";
 
-    var agreement_subtitle = agreement_address ?
-      <h6 className="card-subtitle mb-2 text-muted">Contract: {agreement_address}</h6> :
-      <h6 className="card-subtitle mb-2 text-muted">Lookup an agreement...</h6>;
-
     var agreement_details = agreement_address ?
       <div>
+      <h6 className="card-subtitle mb-2 text-muted">Contract: {agreement_address}</h6>
       <ul>
         <li>Car: {car_address}</li>
         <li>VIN: {this.state.car_vin}</li>
@@ -379,7 +338,6 @@ class AgreementMgmtForm extends React.Component {
       <div className="card">
         <div className="card-body">
           <h5 className="card-title">Lease Agreement</h5>
-            {agreement_subtitle}
             {agreement_details}
         </div>
       </div>
@@ -471,21 +429,20 @@ class AgreementMgmtForm extends React.Component {
 
         {action_error_text}
 
+        {/* Driver Actions */}
         <div className="card">
           <div className="card-body">
             <h6 className="card-subtitle mb-2 text-muted">Driver Actions</h6>
 
             <div class="btn-toolbar mb-3" role="toolbar">
-              <div class="btn-group mr-2" role="group">
+
                 <button onClick={this.handleDriverDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={driver_deposit_disabled}>
                   Driver Sign+Deposit
                 </button>
-              </div>
-              <div class="btn-group mr-2" role="group">
+
                 <button onClick={this.handleDriverPickupSubmit} type="submit" className="btn btn-primary btn-sm" disabled={pickup_disabled}>
                   Driver Pickup
                 </button>
-              </div>
 
               <div class="btn-group mr-2" role="group">
                 <button onClick={this.handlePayment} amount="0.5" type="submit" className="btn btn-primary btn-sm" disabled={payment_disabled}>
@@ -499,44 +456,37 @@ class AgreementMgmtForm extends React.Component {
                 </button>
               </div>
 
-              <div class="btn-group mr-2" role="group">
                 <button onClick={this.handleDriverReturn} type="submit" className="btn btn-primary btn-sm" disabled={return_disabled}>
                   Driver Return
                 </button>
-              </div>
 
-              <div class="btn-group mr-2" role="group">
                 <button onClick={this.handleDriverFinalize} type="submit" className="btn btn-primary btn-sm" disabled={driver_finalize_disabled}>
                   Driver Finalize
                 </button>
-              </div>
+
 
             </div>
           </div>
         </div>
 
-
+        {/* Owner Actions */}
         <div className="card">
           <div className="card-body">
             <h6 className="card-subtitle mb-2 text-muted">Owner Actions</h6>
 
             <div class="btn-toolbar mb-3" role="toolbar">
-
-              <div class="btn-group mr-2" role="group">
               <button onClick={this.handleOwnerDepositSubmit} type="submit" className="btn btn-primary btn-sm" disabled={owner_deposit_disabled}>
                 Owner Sign+Deposit
               </button>
-              </div>
-              <div class="btn-group mr-2" role="group">
+
               <button onClick={this.handleProcessCycle} type="submit" className="btn btn-primary btn-sm" disabled={process_cycle_disabled}>
                 Process Cycle
               </button>
-              </div>
-              <div class="btn-group mr-2" role="group">
+
               <button onClick={this.handleOwnerFinalize} type="submit" className="btn btn-primary btn-sm" disabled={owner_finalize_disabled}>
                 Owner Finalize
               </button>
-              </div>
+
             </div>
           </div>
         </div>
