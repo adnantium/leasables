@@ -173,7 +173,8 @@ class CarMgmtForm extends React.Component {
 
     var car_subtitle = car_address ?
       <h6 className="card-subtitle mb-2 text-muted">{car_address}</h6> :
-      <h6 className="card-subtitle mb-2 text-muted">Lookup a car...</h6>;
+      "";
+
     var car_details;
     if (car_address) {
       car_details = (
@@ -191,7 +192,10 @@ class CarMgmtForm extends React.Component {
         <div>
           <form onSubmit={this.handleCarLookup}>
             <label>
-              <input id="car_address" name="car_address" type="text" ref={this.car_address_input} />
+              <input id="car_address" name="car_address" 
+                type="text" ref={this.car_address_input} placeholder="Lookup a car..." 
+                className="form-control" 
+              />
             </label>
             <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
           </form>

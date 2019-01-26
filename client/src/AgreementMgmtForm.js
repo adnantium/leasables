@@ -376,7 +376,11 @@ class AgreementMgmtForm extends React.Component {
       <div>
         <form onSubmit={this.handleAgreementLookup}>
           <label>
-            <input id="agreement_address" name="agreement_address" type="text" ref={this.agreement_address_input} />
+            <input id="agreement_address" name="agreement_address" 
+              className="form-control" 
+              type="text" ref={this.agreement_address_input} 
+              placeholder="Lookup an agreement..."
+            />
           </label>
           <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
         </form>
