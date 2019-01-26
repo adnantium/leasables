@@ -36,7 +36,7 @@ This initial implementation is specialized for leasing cars but the underlying c
 
 
 
-# Sort term lease agreements executed as smart contracts
+## Short term lease agreements executed as smart contracts
 
 Using Leasables, 2 participants in a network can come to an agreement on the terms of a lease that will be initiated, executed and enforced by a set of smart contracts in a trustless environment such as Ethereum.
 
