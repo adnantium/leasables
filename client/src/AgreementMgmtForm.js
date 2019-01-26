@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+import React from "react";
+// import AgreementState from "./AgreementState.js";
 
 var web3 = require("web3");
 
@@ -298,33 +299,80 @@ class AgreementMgmtForm extends React.Component {
     let car_address = this.state.the_car 
       ? this.state.the_car.address : "";
 
-    var agreement_details = agreement_address ?
+    var agreement_details = "";
+    var agreement_lookup = "";
+    var states_list = "";
+
+    if (agreement_address) {
+      const state_names = [ 
+        "Draft", 
+        "DriverSigned", 
+        "Approved", 
+        "InProgress", 
+        "CarReturned", 
+        "Finalized", 
+        "Ended"];
+
+      // states_list = state_names.map((state_name) =>
+      //     <li className="list-group-item">{state_name}</li>
+      // );
+      
+      var states_list = [];
+      state_names.forEach(state_name => {
+        var line;
+        if (state_name == this.state.agreement_state) {
+          line = <li className="list-group-item active">{state_name}</li>
+        } else {
+          line = <li className="list-group-item">{state_name}</li>
+        }
+        states_list.push(line);
+      });
+
+      agreement_details = 
       <div>
-      <h6 className="card-subtitle mb-2 text-muted">Contract: {agreement_address}</h6>
-      <ul>
-        <li>Car: {car_address}</li>
-        <li>VIN: {this.state.car_vin}</li>
-        <li>Driver: {this.state.lease_driver}</li>
-        <li>You are: {is_driver_or_owner}</li>
-      </ul>
-      <ul>
-        <li>State: {this.state.agreement_state}</li>
-        <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
-        <li>Daily rate: {this.state.daily_rate} eth</li>
-        <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
-        <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
-        <li>Driver balance: {this.state.driver_balance} eth</li>
-        <li>Driver over balance: {this.state.driver_over_balance} eth</li>
-        <li>Car balance: {this.state.car_balance} eth</li>
-        <li>Contract's balance: {this.state.agreement_balance} eth</li>
-        <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
-        <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
-        <li>Picked up time: {this.state.pickup_time}</li>
-        <li>Returned time: {this.state.return_time}</li>
-        <li>Last cycle run: {this.state.last_cycle_time}</li>
-      </ul>
+        <h6 className="card-subtitle mb-2 text-muted">Contract: {agreement_address}</h6>
+        <div className="row">
+          <div className="col-9">
+            <ul>
+              <li>Car: {car_address}</li>
+              <li>VIN: {this.state.car_vin}</li>
+              <li>Driver: {this.state.lease_driver}</li>
+              <li>You are: {is_driver_or_owner}</li>
+            </ul>
+            <ul>
+              <li>State: {this.state.agreement_state}</li>
+              <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
+              <li>Daily rate: {this.state.daily_rate} eth</li>
+              <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
+              <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
+              <li>Driver balance: {this.state.driver_balance} eth</li>
+              <li>Driver over balance: {this.state.driver_over_balance} eth</li>
+              <li>Car balance: {this.state.car_balance} eth</li>
+              <li>Contract's balance: {this.state.agreement_balance} eth</li>
+              <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
+              <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
+              <li>Picked up time: {this.state.pickup_time}</li>
+              <li>Returned time: {this.state.return_time}</li>
+              <li>Last cycle run: {this.state.last_cycle_time}</li>
+            </ul>
+          </div>
+          <div className="col-3">
+            {/* <AgreementState
+              agreement_state={this.state.agreement_state}
+            /> */}
+            <h6 className="mb-2">Agreement State</h6>
+            <div className="card">
+              <ul className="list-group list-group-flush">
+                    {states_list}
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-      :
+
+
+    } else {
+      agreement_lookup = 
       <div>
         <form onSubmit={this.handleAgreementLookup}>
           <label>
@@ -333,12 +381,14 @@ class AgreementMgmtForm extends React.Component {
           <input type="submit" value="Find it!" className="btn btn-primary btn-sm" />
         </form>
       </div>
-  
+    }
+
     return (
       <div className="card">
         <div className="card-body">
           <h5 className="card-title">Lease Agreement</h5>
             {agreement_details}
+            {agreement_lookup}
         </div>
       </div>
     );
@@ -413,11 +463,12 @@ class AgreementMgmtForm extends React.Component {
       <div className="col-lg-9">
 
         {lookup_error_text}
+        {action_error_text}
 
         {this.agreement_card(is_driver_or_owner)}
 
         <div className="card">
-            <h6 class="card-header">Recently Seen Lease Agreements</h6>
+            <h6 className="card-header">Recently Seen Lease Agreements</h6>
             <div className="card-body">
               <ul>{known_agreements_list}</ul>
             </div>
@@ -426,8 +477,6 @@ class AgreementMgmtForm extends React.Component {
       </div>
 
       <div className="col-lg-3">
-
-        {action_error_text}
 
         {/* Driver Actions */}
         <div className="card">
