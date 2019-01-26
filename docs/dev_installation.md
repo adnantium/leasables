@@ -9,9 +9,6 @@
     * Confirm:
         * `$ node --version` --> v11.6.0
         * `$ npm --version` --> 6.5.0
-* Install Ganache - CLI or the pretty UI version
-    * `$ sudo npm install -g ganache-cli`
-    * or: https://truffleframework.com/ganache
 * Get the code:
     * `$ git clone https://github.com/adnan214/leasables.git`
     * `$ cd leasables/`
@@ -21,8 +18,14 @@
     * `$ cd client`
     * `$ npm install`
     * `$ export PATH=~/leasables/node_modules/.bin:$PATH`
+* Install Ganache - CLI or the pretty UI version
+    * `$ sudo npm install -g ganache-cli`
+    * or: https://truffleframework.com/ganache
+    * Start it up. It will show you a 12 word mnemonic at start up. Make a note of it.
 * Setup Metamask add-on: https://metamask.io/
-   * It will generate a 12 word mnemonic for you or you can import an existing one if you prefer
+   * Go to: "Restore account? Import using account seed phrase"
+   * Put in the same mnemonic from ganache and pick a password
+   * Metamask will setup the 10 accounts from ganache and have them ready for you to use from the browser
 * Add that mnemonic to a `.secret` file in the `leasables/` directory
    * `echo "word1 word2 ... word12" > ~/leasables/.secret`
     
