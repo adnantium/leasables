@@ -495,7 +495,7 @@ class AgreementLookupForm extends React.Component {
     }
   
   
-    // owner finalize
+  // owner finalize
   handleOwnerFinalize = async (event) => {
       event.preventDefault();
       this.setState({action_error: null})
@@ -503,20 +503,41 @@ class AgreementLookupForm extends React.Component {
       const { account, lease_agreement } = this.state;
       
       try {
-        const tx = await lease_agreement
-          .ownerFinalize({from: account});
-        console.log(tx);
+          const tx = await lease_agreement
+            .ownerFinalize({from: account});
+          console.log(tx);
       } catch (error) {
-        console.log(error);
-        this.setState({
-          action_error: format_error_message(error.message),
-        })
-        return;
+          console.log(error);
+          this.setState({
+              action_error: format_error_message(error.message),
+          })
+          return;
       }
       this.refreshLeaseAgreementInfo(lease_agreement);
-    }
+  }
   
   
+  // driver finalize
+  handleDriverFinalize = async (event) => {
+      event.preventDefault();
+      this.setState({action_error: null})
+
+      const { account, lease_agreement } = this.state;
+      
+      try {
+          const tx = await lease_agreement
+            .driverFinalize({from: account});
+          console.log(tx);
+      } catch (error) {
+          console.log(error);
+          this.setState({
+              action_error: format_error_message(error.message),
+          })
+          return;
+      }
+      this.refreshLeaseAgreementInfo(lease_agreement);
+  }
+
   agreement_card(is_driver_or_owner) {
 
     let agreement_address = this.state.agreement_address 
