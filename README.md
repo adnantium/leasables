@@ -2,37 +2,28 @@
 
 # Leasables 
 
-The Leasables protocol models the Lessor/Lessee relationship between a Leasor and Lessee and facilitates its execution thru the agreement's lifecycle. The Leasable.sol Contract captures the essential elements of any lease agreement for any asset or resource:
+The Leasables protocol models the relationship between a Lessor and Lessee and facilitates its execution thru the agreement's lifecycle. The Leasable.sol Contract captures the essential elements of any lease agreement for any asset or resource:
 
 * The details of the agreement
-  * start and end times of the lease term
-  * pickup & return locations and conditions
-  * key identifying attributes of the object
-  * terms of use for the lessee
-  * the lessor's responsibilities during the lease
-  * payment rate and method
-* The Lessor's & Lessee's actions at each step
+  * Start and end times of the lease term
+  * Pickup & return locations and conditions
+  * Key identifying attributes of the object
+  * Terms of use for the lessee
+  * The lessor's responsibilities during the lease
+  * Payment rate, frequency and method
+* The Lessor's & Lessee's available actions at each step
   * Sign & Deposit
   * Pickup & Return
 * Handling Funds
   * Accepting payments from the lessee
-  * Holding deposit and security funds in escrow
+  * Holding and releasing deposit and security funds in escrow
   * Distributed funds to the Leasable object's contract balance
 
-This initial implementation is specialized for leasing cars but the underlying concepts apply to any object/asset/resource can be "rented" for a period of time.
+This initial implementation is specialized for leasing cars but the underlying concepts apply to any object/asset/resource that can be "rented" for a period of time.
 
 
 ## Setup
 
-1. Install [NodeJS](https://nodejs.org)
-    * OSX: Use Homebrew and `brew install node` else be prepared to do a lot of `sudo` commands later.
-2. `npm install truffle`
-3. `npm install openzeppelin-solidity`
-4. `npm install web3`
-5. `git clone https://github.com/adnan214/leasables.git`
-6. `cd leasables`
-7.  `export PATH=$PATH:$(PWD)/node_modules/.bin`
-8.  
 
 
 
