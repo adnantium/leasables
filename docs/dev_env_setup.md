@@ -123,4 +123,9 @@ Ports are configured in a variety of places including:
 Ensure the ports are in sync if you have any connection issues.
 
 
+### Python error at setup
 
+`gyp ERR! stack Error: Command failed: /usr/local/bin/python -c import sys; print "%s.%s.%s" % sys.version_info[:3]; ....`
+
+An annoying issue with Python on OSX. It ships with 2.7 and lot of the underlying scripts used by `npm` expect that. Does not work well if you have upgraded to Python 3+
+Quick hack fix: (Temporarily) Put OSX's original python version at the front of $PATH

@@ -11,20 +11,27 @@ The Leasables protocol models the relationship between a Lessor and Lessee and f
   * Terms of use for the lessee
   * The lessor's responsibilities during the lease
   * Payment rate, frequency and method
-* The Lessor's & Lessee's available actions at each step
-  * Sign & Deposit
-  * Pickup & Return
-* Handling Funds
+* The Lessor's & Lessee's available actions at each step such as Sign, Deposit,Pickup & Return
+* Handling of Funds
   * Accepting payments from the lessee
   * Holding and releasing deposit and security funds in escrow
   * Distributed funds to the Leasable object's contract balance
 
 This initial implementation is specialized for leasing cars but the underlying concepts apply to any object/asset/resource that can be "rented" for a period of time.
 
-
+Key components:
+* `LeasableCar.sol`: The on-chain representation of a car available for lease
+* `LeaseAgreement.sol` An agreement between a LeasableCar and driver
+  
 ## Setup
 
+Essential Requirements:
+* Solidity v5+
+* Truffle v5+
+* Web3 v1+
+* React v16.5+
 
+See details at: [Dev & Demo Environment Setup](docs/dev_installation.md)
 
 
 ## Short term lease agreements executed as smart contracts
@@ -37,12 +44,6 @@ Implementing the lease transaction as a smart contract gives us all the benefits
 * what was agreed on in the contract
 * what is the current state at each step
 * what needs to be done to complete the transaction
-
-
-
-
-
-
 
 
 ## Leasable Agreement Lifecycle

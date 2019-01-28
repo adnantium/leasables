@@ -1,9 +1,6 @@
 
 
 
-
-
-
 ### Upgradability
   * New car and lease contract creation done thru `LeasablesRegistry.sol`
   * New cars being brought onto chain will use latest version of `LeasableCar.sol` contract as its configured in the registry contract.
@@ -29,25 +26,25 @@
     * 
 
 ### Push vs Pull Payments using Withdrawal pattern:
-  * Drivers push payments into `LeaseAgreement.sol`. All transfers of funds go the `LeaseAgreement.withdraw()`
+  * Drivers push payments into `LeaseAgreement.sol`. All transfers of funds go thru `LeaseAgreement.withdraw()`
 
 ### Rate Limiting & Speed Bumps
   * The LeaseAgreement contract limits the frequency that the `processCycle()` function can be run at (default 1 hour). Slows down the impacts of any attack that tries to move money out of the contract.
-  * 
+  * Funds from the driver can only go into the contract until the agreement is near the end. Funds cannot be taken out by driver until owner finalizes 
 
 ### Restricted Access
   * Minimize the contract details and state information that is public exposed outside the contract.
-  * Only the car driver or its owner(s) can interact with any functions on the LeaseAgreement
+  * Only the car, its driver or its owner(s) can interact with any functions on the LeaseAgreement
   * check require() condition in the beginning of each function
   * Whenever possible, restricted other contract’s access to the state by making state variables private.
-  * 
 
 
 ### Smart Contract Documentation
   * document data state expectations incoming for each function
   * document expected end of function data state for each function
+  * document events that can be triggers thru the lifecycle of the agreement
 
 ### Auto-deprecation and Contract Mortality
 * LeaseAgreement.sol contract effectively self expire at the end of its term.
-* Funds cannot go in or out of LeaseAgreement contracts once its been completed and settled by the driver & owner. The LeaseAgreement has a limit lifespan that it can function within.
-* 
+* Funds cannot go in or out of LeaseAgreement contracts once its been completed and settled by the driver & owner. The LeaseAgreement has a limitted lifespan that it can function within. It is just for historical records after that.
+  
