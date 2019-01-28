@@ -2,11 +2,11 @@
 
 
 ### Upgradability
-  * New car and lease contract creation done thru `LeasablesRegistry.sol`
   * New cars being brought onto chain will use latest version of `LeasableCar.sol` contract as its configured in the registry contract.
   * New lease agreements `LeaseAgreement.sol` created by each car will also go thru registry
   * Registry ensures that all newly created contracts use the latest most secure an cost efficient versions.
   * Car contracts can be retired and the car on chain representation can be moved to a new contract
+  * (Future) New car and lease contract creation done thru `LeasablesRegistry.sol`
 
 ### Risk and Damage controls
   * Minimized amount of funds exposed at risk thru the contract:
@@ -15,18 +15,19 @@
     * Drivers can maintain the minimum balance needed by controlling payment into the lease agreement contract.
 
 ### Circuit Breakers
-  * It any issues are found in the `LeasableCar.sol` contract:
+  * If any issues are found in the `LeasableCar.sol` contract:
     * `LeasableCar.disable()`:
       * Car owners can disable the availability of a car at anytime to prevent new lease agreements from it. The owner can transfer (retire old contract and create new contract) to new contract based on the 
   * (Future) If any issues are found in the `LeaseAgreement.sol` contract:
     * `LeaseAgreement.offerUpdatedContract(address new_agreement_contract`:
-      * Owner can offer the driver a new agreement contract that contains the same terms but utilized the upgraded version of `LeaseAgreemen.sol`
+      * Owner can offer the driver a new agreement contract that contains the same terms but utilized the upgraded version of `LeaseAgreement.sol`
       * Can also be used for non-security issues that require a fresh lease agreement but still maintains a connection to the original agreement
-      * Driver can `acceptUpdatedAgreement(address new_agreement_contract` and then all future processing and execution of the payments will be done on new contract and the original contract will be disabled.
+      * Driver can `acceptUpdatedAgreement(address new_agreement_contract)` and then all future processing and execution of the payments will be done on new contract and the original contract will be disabled.
     * 
 
 ### Push vs Pull Payments using Withdrawal pattern:
-  * Drivers push payments into `LeaseAgreement.sol`. All transfers of funds go thru `LeaseAgreement.withdraw()`
+  * Drivers push payments into `LeaseAgreement.sol` thru
+  * All transfers of funds out go thru `LeaseAgreement`.`ownerFinalize()` & `driverFinalize()`
 
 ### Rate Limiting & Speed Bumps
   * The LeaseAgreement contract limits the frequency that the `processCycle()` function can be run at (default 1 hour). Slows down the impacts of any attack that tries to move money out of the contract.
@@ -45,6 +46,6 @@
   * document events that can be triggers thru the lifecycle of the agreement
 
 ### Auto-deprecation and Contract Mortality
-* LeaseAgreement.sol contract effectively self expire at the end of its term.
-* Funds cannot go in or out of LeaseAgreement contracts once its been completed and settled by the driver & owner. The LeaseAgreement has a limitted lifespan that it can function within. It is just for historical records after that.
+* Each LeaseAgreement.sol contract effectively self expires at the end of its term.
+* Funds cannot go in or out of LeaseAgreement contracts once its been completed and settled by the driver & owner. The LeaseAgreement has a limited lifespan that it can function within. It is just for historical records after that.
   
