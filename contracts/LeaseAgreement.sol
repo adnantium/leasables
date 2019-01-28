@@ -3,6 +3,14 @@ pragma solidity >=0.4.24 <0.6.0;
 import "./LeasableCar.sol";
 import "./TimeMachine.sol";
 
+/** @title Lease Agreement
+  * @author Adnan (adnan214@github)
+  */
+
+// 
+// TODO: Split this up into multiple files. It huge.
+// TODO: Move external/physical interaction code
+// 
 contract LeaseAgreement {
 
     enum LeaseAgreementStates {
@@ -15,9 +23,8 @@ contract LeaseAgreement {
         Ended         //6
     }
 
-    // The LeasableCar 
+    // The LeasableCar & the driver
     address payable public the_car;
-    // The Driver
     address payable public the_driver;
 
     // this is usually the car but not neccasarily
@@ -54,6 +61,7 @@ contract LeaseAgreement {
     uint public pickup_time;
     uint public return_time;
 
+    // The last time processCycle() was run
     uint public last_cycle_time;
 
     // Agreement state transition events
@@ -92,11 +100,18 @@ contract LeaseAgreement {
     event DriverAccessDisabled(address the_car, address the_driver, uint256 the_time);
     event DriverAccessFailure(address the_car, address the_driver, uint256 the_time);
 
-    
     modifier driver_only(string memory error_message) { require(msg.sender == the_driver, error_message); _; }
     modifier owner_only(string memory error_message) { address car_owner = getCarOwner(); require(msg.sender == car_owner, error_message); _; } 
     modifier car_only(string memory error_message) { require(msg.sender == the_car, error_message); _; }
     
+    /** @dev Creator
+      * @param _car Address of car
+      * @param _driver Driver's onchain address
+      * @param _start_timestamp The planned pickup time
+      * @param _end_timestamp The planned return time
+      * @param _daily_rate Cost per 24hours
+      * @param _time_machine FOR DEV ONLY! the time source for 'what time is now'
+      */    
     constructor (
         address payable _car, 
         address payable _driver, 
@@ -118,7 +133,7 @@ contract LeaseAgreement {
         wei_per_sec = daily_rate/86400;
 
         // default deposit amounts:
-        // driver: 4 days of payments
+        // driver: 4 days
         // owner: 2 days
         driver_deposit_required = daily_rate * 4;
         owner_deposit_required = daily_rate * 2;
@@ -127,6 +142,9 @@ contract LeaseAgreement {
         emit DraftCreated(the_car, the_driver, start_timestamp, end_timestamp, daily_rate, address(time_machine));
     }
 
+    /** @dev Time till the lease agreement's planned start. Based on time_now() from the time machine
+      * @return Seconds till start
+      */
     function timeTillStart() public view returns (uint time_till_start)
     {
         uint the_time_now = time_machine.time_now();
@@ -136,7 +154,9 @@ contract LeaseAgreement {
         return start_timestamp - the_time_now;
     }
 
-
+    /** @dev Time till the lease agreement's planned end. Based on time_now() from the time machine
+      * @return Seconds till end
+      */
     function timeTillEnd()
         public
         view
@@ -149,6 +169,9 @@ contract LeaseAgreement {
         return end_timestamp - the_time_now;
     }
 
+    /** @dev For convienently getting the UID of the car's onchain owner
+      * @return Address of the owner
+      */
     function getCarOwner() 
         public 
         view
@@ -159,6 +182,12 @@ contract LeaseAgreement {
         return car_owner;
     }
 
+    /** @dev The agreements collected funds. Represently deposit 
+        amounts from the driver+owner and payments collected that 
+        have not yet been transferred to the car
+      * @return balance in wei
+      */
+
     function contract_balance() 
         public view 
         returns (uint the_balance)
@@ -166,12 +195,15 @@ contract LeaseAgreement {
         return address(this).balance;
     }
 
+    /** @notice Collects the deposit into escrow and marks the agreement as signed
+      * @dev Triggers DriverDepositCollected, DriverSigned and DriverBalanceUpdated events
+      */
     function driverSign()
         public 
         payable 
         driver_only("Only driver can sign agreement as the driver!")
     {
-        // require(msg.sender == the_driver, "Only driver can sign agreement!");
+        require(msg.sender == the_driver, "Only driver can sign agreement!");
         require(is_driver_signed == false, "Agreement has already been signed by driver");
         require(msg.value >= driver_deposit_required, "Insufficient deposit amount!");
 
@@ -190,6 +222,9 @@ contract LeaseAgreement {
         }
     }
 
+    /** @notice Collects the deposit from the owner and marks the agreement as signed
+      * @dev Triggers OwnerDepositCollected, OwnerSigned and AgreementApproved events
+      */
     function ownerSign() 
         public 
         payable 
@@ -209,6 +244,10 @@ contract LeaseAgreement {
         emit AgreementApproved(the_car, the_driver);
     }
 
+    /** @notice Initiates the transfer of possesion from the owner to the driver
+      * @dev Triggers CarPickedUp, AgreementStarted and DriverAccessEnabled or DriverAccessFailure events
+      * @return 
+      */
     function driverPickup()
         public
         payable
@@ -217,9 +256,9 @@ contract LeaseAgreement {
         // atTime(0)
     {
     
+        // TODO: move these check to modifiers
         require(agreement_state == LeaseAgreementStates.Approved, "Agreement has not been fully approved!");
         require(timeTillStart() == 0, "Agreement is not ready to start yet");
-        // require: car location is right (?)
 
         uint time_now = time_machine.time_now();
 
@@ -238,6 +277,10 @@ contract LeaseAgreement {
         }
     }
 
+    /** @notice Accepts the driver's payment
+      * @dev Payable. Updates the driver's in contract balance. 
+      * Triggers DriverBalanceUpdated and DriverOverBalance events
+      */
     function driverPayment() 
         public 
         payable 
@@ -261,6 +304,12 @@ contract LeaseAgreement {
         }        
     }
 
+    /** @dev Handles the mgmt of funds between from the driver to the car.
+      *     Does not deal with time, just how much is owned and updates balances
+      *     Triggers DriverBalanceLow, CarBalanceUpdated, DriverBalanceUpdated and DriverOverBalance
+      * @param cost_of_this_cycle Cost of the cycles
+      * @return Balance still owed by the driver
+      */
     function processRebalance(uint cost_of_this_cycle) 
         internal 
         returns (uint remaining_balance_due)
@@ -295,7 +344,6 @@ contract LeaseAgreement {
                 } else {
                     // still_due is more than driver_deposit_amount!
                     // take what we can
-
                     car_balance += driver_deposit_amount;
                     emit CarBalanceUpdated(the_car, the_driver, car_balance);
 
@@ -320,6 +368,10 @@ contract LeaseAgreement {
         }
     }
 
+    /** @dev Figures out what changed since the last run and updates the numbers
+      *     Triggers CycleProcessed event
+      * @return Cost of this cycle run
+      */
     function processCycle() 
         public 
         returns (uint cycle_cost)
@@ -346,6 +398,10 @@ contract LeaseAgreement {
         return cost_of_this_cycle;
     }
 
+    /** @notice Initiates the transfer of car posession from driver to owner
+      * @dev It does one finalize process run and disables driver's access to the car
+      *     Triggers AgreementOverDue or AgreementCompleted based on how much is owned/remaining 
+      */
     function driverReturn() 
         public 
         driver_only("Only the driver can do return!")
@@ -380,6 +436,12 @@ contract LeaseAgreement {
         }
     }
 
+    /** @notice Wraps up the lease agreement after the owner has confirmed that 
+      *     all the terms and conidtions of the lease were met and the driver can be 
+      *     released of the responsibility to the car
+      * @dev Refunds the driver's deposit and any remaining funds in the driver's balance
+      *     Triggers OwnerDepositReturned, CarBalanceTransfered and AgreementOwnerFinalized
+      */
     function ownerFinalize()
         public
         owner_only("Only the car owner can ownerFinalize!")
@@ -403,6 +465,9 @@ contract LeaseAgreement {
         emit AgreementOwnerFinalized(the_car, the_driver);
     }
 
+    /** @notice Releases the driver and transfers deposit and any remaining balance
+      * @dev Triggers AgreementDriverFinalized events
+      */
     function driverFinalize()
         public
         driver_only("Only the driver can driverFinalize!")
@@ -426,6 +491,12 @@ contract LeaseAgreement {
 
     }
 
+    /** @notice Connects out to the real world and get whatever info it can on the car's latest status
+      *     That info should be stored in the lease history 
+      * @dev HARDCODED!
+      * @return mileage
+      * @return geolocation
+      */
     function getCarStatus() 
         public
         pure 
@@ -437,9 +508,13 @@ contract LeaseAgreement {
         //  * current mileage 
         //  * current geolocation
         // HARDCODED!!!
-        return (11111, "fake_geo_location");
+        return (11111, "fake_geo,location");
     }
 
+    /** @notice Connects out to the car in the real world and revokes the driver's access to it
+      * @dev HARDCODED!
+      * @return confirmation of deactivation success/failure
+      */
     function disableDriverAccess() 
         private 
         returns (bool was_disabled)
@@ -452,6 +527,10 @@ contract LeaseAgreement {
         return true;
     }
 
+    /** @notice Connects out to the car in the real world and gives the driver's access to it
+      * @dev HARDCODED!
+      * @return confirmation of activation success/failure
+      */
     function enableDriverAccess() 
         private 
         returns (bool was_enabled)

@@ -10,7 +10,7 @@ import "./LeaseAgreement.sol";
 // The agreements between the car and driver are created thru this contract. 
 
 /**
-  * @title An on-chain representation of a car available for lease
+  * @title Leasable Car
   * @author Adnan (adnan214@github)
   * @notice Represents a real world car. It legal ownership is not handled here. 
     Focus is on its identifying attributes, its state in the terestrial world and the lease agreements
