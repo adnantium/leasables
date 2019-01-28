@@ -31,7 +31,7 @@ Essential Requirements:
 * Web3 v1+
 * React v16.5+
 
-See details at: [Dev & Demo Environment Setup](docs/dev_installation.md)
+See details at: [Dev & Demo Environment Setup](docs/dev_env_setup.md)
 
 
 ## Short term lease agreements executed as smart contracts
@@ -49,13 +49,13 @@ Implementing the lease transaction as a smart contract gives us all the benefits
 ## Leasable Agreement Lifecycle
 
 An agreement transitions thru the following states:
- * Draft
- * Driver Signed
- * Approved
- * InProgress
- * Car Returned
- * Finalized
- * Ended
+ 1. Draft
+ 1. Driver Signed
+ 1. Approved
+ 1. InProgress
+ 1. Car Returned
+ 1. Finalized
+ 1. Ended
 
 ### Draft
   * Created by Car at the request of an interested driver
