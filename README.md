@@ -41,3 +41,5 @@ Implementing the lease transaction as a smart contract gives us all the benefits
 * What was agreed on in the contract
 * What is the current state at each step
 * What needs to be done to complete the transaction
+
+The code includes a a rudimentary UI to illustrate how drivers, cars and car owners would interact thru the lifecycle of the agreement. See: [Demo Walkthru](docs/demo_walkthru.md)
