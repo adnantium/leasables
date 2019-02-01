@@ -5,12 +5,13 @@ const Web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var AgreementExecutorArtifact = artifacts.require("AgreementExecutor");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
 
 
 async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid, time_machine_address) {
     var tx = await the_car.
-    requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
+    requestDraftAgreement(start_timestamp, end_timestamp, 
         {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);
@@ -28,8 +29,8 @@ contract('TestDriverPickup', async function(accounts) {
     var driver_uid = accounts[1];
     var some_other_account = accounts[2]
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
     const acct_gas = {from: car_owner_uid, gas: g, gasPrice: gp};
 
     const one_hour_secs = 60*60;
@@ -68,26 +69,28 @@ contract('TestDriverPickup', async function(accounts) {
 
         // agreement start: dec_4_2018_12noon
         const car1_agreement = await create_agreement(
-            car1, dec_4_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+            car1, dec_4_2018_12noon, dec_9_2018_12noon, driver_uid);
 
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
+    
         // driver sign + deposit
         var driver_deposit_required = await car1_agreement.driver_deposit_required.call();
-        tx = await car1_agreement.
+        tx = await executor.
             driverSign({from: driver_uid, value: driver_deposit_required});
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 1, "Agreement should be in DriverSigned(1) state!");
 
-        var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
+        var driver_deposit_amount = await executor.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), driver_deposit_required.toString(), "Driver depoist amount is not right!");
 
 
-
-        
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
         // should fail since owner has not signed even though its pickup time
         try {
-            tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
+            tx = await executor.driverPickup({from: driver_uid, value: 0});
         } catch(error) {
             error_caught = true;
         }
@@ -95,9 +98,9 @@ contract('TestDriverPickup', async function(accounts) {
 
         // owner sign + deposit
         var owner_deposit_required = await car1_agreement.owner_deposit_required.call();
-        tx = await car1_agreement.ownerSign({from: car_owner_uid, value: owner_deposit_required});
+        tx = await executor.ownerSign({from: car_owner_uid, value: owner_deposit_required});
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 2, "Agreement should be in Approved(2) state!");
 
         
@@ -107,7 +110,7 @@ contract('TestDriverPickup', async function(accounts) {
         // should fail since its still not time yet
         tx = await tm.setNow(dec_3_2018_12noon, acct_gas);
         try {
-            tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
+            tx = await executor.driverPickup({from: driver_uid, value: 0});
         } catch(error) {
             error_caught = true;
         }
@@ -115,14 +118,14 @@ contract('TestDriverPickup', async function(accounts) {
     
         // now its pickup time
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
-        tx = await car1_agreement.driverPickup({from: driver_uid, value: 0});
+        tx = await executor.driverPickup({from: driver_uid, value: 0});
         assert.equal(tx.logs[0].event, "CarPickedUp", "CarPickedUp event not emitted!")
         assert.equal(tx.logs[1].event, "AgreementStarted", "AgreementStarted event not emitted!")
         
-        var agreement_state = await car1_agreement.agreement_state.call();
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 3, "Agreement should be in InProgress(3) state!");
         
-        var pickup_time = await car1_agreement.pickup_time.call();
+        var pickup_time = await executor.pickup_time.call();
         assert.equal(pickup_time.toNumber(), dec_4_2018_12noon, "Pickup time is wrong!");        
     });
 

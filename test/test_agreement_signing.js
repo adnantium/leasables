@@ -5,17 +5,19 @@ const Web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var AgreementExecutorArtifact = artifacts.require("AgreementExecutor");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
 
-async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid, time_machine_address) {
+async function create_agreement(the_car, start_timestamp, end_timestamp, driver_uid) {
     var tx = await the_car.
-    requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
+    requestDraftAgreement(start_timestamp, end_timestamp,
         {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement_promise = LeaseAgreementArtifact.at(agreement_uid);
     // Trying to await for the .at() call still returns a promise
     // we have to return a promise and await at the function call.
     return agreement_promise;
+    
 }
 
 contract('TestSignAgreement', async function(accounts) {
@@ -33,8 +35,8 @@ contract('TestSignAgreement', async function(accounts) {
     var driver5_uid = accounts[5];
     var some_other_account = accounts[8]
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
 
     const acct_gas = {from: accounts[0], gas: g, gasPrice: gp};
 
@@ -66,14 +68,18 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking driverSign with exact deposit amount...", async function() {
 
-        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid);
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
+
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
-            
+
         var deposit_required = await car1_agreement.driver_deposit_required.call();
         deposit_in = deposit_required;
-        var tx = await car1_agreement.
+        var tx = await executor.
             driverSign({from: driver_uid, value: deposit_in});
 
         assert.equal(tx.logs.length, 2, "driverSign with exact deposit should only have 2 events!");
@@ -88,28 +94,32 @@ contract('TestSignAgreement', async function(accounts) {
         assert.equal(tx.logs[1].args.the_driver, driver_uid, "DriverSigned driver_uid is bad!");
         assert.equal(tx.logs[1].args.deposit_amount.toString(), deposit_required.toString(), "DriverSigned deposit amount is bad!");
 
-        var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
+        var driver_deposit_amount = await executor.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), deposit_in.toString(), "Driver depoist amount is not right!");
 
-        var driver_balance_amount = await car1_agreement.driver_balance.call();
+        var driver_balance_amount = await executor.driver_balance.call();
         assert.equal(driver_balance_amount, 0, "Driver balance amount should be 0 after exact deposit!");
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 1, "Agreement should be in DriverSigned(1) state!");
 
     });
 
     it("Checking driverSign with extra deposit amount...", async function() {
 
-        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid);
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
+
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
 
         var deposit_required = await car1_agreement.driver_deposit_required.call();
         // putting in extra $
         var deposit_in = deposit_required * 1.5;
-        var tx = await car1_agreement.
+        var tx = await executor.
             driverSign({from: driver_uid, value: deposit_in});
 
         assert.equal(tx.logs.length, 3, "driverSign with extra deposit should have 3 events!");
@@ -130,25 +140,29 @@ contract('TestSignAgreement', async function(accounts) {
         var expected_balance = deposit_in - deposit_required;
         assert.equal(tx.logs[2].args.new_balance.toString(), expected_balance.toString(), "DriverBalanceUpdated baalnce amount is bad!");
 
-        var driver_deposit_amount = await car1_agreement.driver_deposit_amount.call();
+        var driver_deposit_amount = await executor.driver_deposit_amount.call();
         assert.equal(driver_deposit_amount.toString(), deposit_required.toString(), "Driver deposit amount is not right!");
 
-        var driver_balance_amount = await car1_agreement.driver_balance.call();
+        var driver_balance_amount = await executor.driver_balance.call();
         assert.equal(driver_balance_amount.toString(), expected_balance.toString(), "Driver balance amount is not right!");
 
     });
 
     it("Checking driverSign require() conditions...", async function() {
 
-        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid);
         var deposit_required = await car1_agreement.driver_deposit_required.call();
+
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
 
         // Check min deposit required
         // putting in less than required $
         var deposit_in = deposit_required * 0.5;
         var error_caught = false;
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 driverSign({from: driver_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -160,7 +174,7 @@ contract('TestSignAgreement', async function(accounts) {
         // contract was created by driver_uid but we will try to depoist from another account
         var error_caught = false;
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 driverSign({from: some_other_account, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -168,7 +182,7 @@ contract('TestSignAgreement', async function(accounts) {
         assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit as the driver!")
 
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 driverSign({from: car_owner_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -177,11 +191,12 @@ contract('TestSignAgreement', async function(accounts) {
 
         // Check double sign & deposit
         var error_caught = false;
-        var tx = await car1_agreement.
+        var tx = await executor.
                 driverSign({from: driver_uid, value: deposit_in});
-        // try to depoit again
+
+        // try to deposit again
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 driverSign({from: driver_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -191,15 +206,19 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking ownerSign require() conditions...", async function() {
 
-        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid);
 
-        var agreement_state = await car1_agreement.agreement_state.call();
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
+
+        var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 0, "Agreement should be in Created(0) state!");
 
         // check that owner casnnot sign before driver
         var error_caught = false;
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 ownerSign({from: car_owner_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -208,7 +227,7 @@ contract('TestSignAgreement', async function(accounts) {
 
         // driver sign
         var deposit_required = await car1_agreement.driver_deposit_required.call();
-        var tx = await car1_agreement.
+        var tx = await executor.
             driverSign({from: driver_uid, value: deposit_required});
 
         // Check min deposit required
@@ -217,7 +236,7 @@ contract('TestSignAgreement', async function(accounts) {
         var deposit_in = deposit_required * 0.5;
         var error_caught = false;
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 ownerSign({from: car_owner_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -230,7 +249,7 @@ contract('TestSignAgreement', async function(accounts) {
         deposit_in = deposit_required;
         var error_caught = false;
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 ownerSign({from: some_other_account, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -238,7 +257,7 @@ contract('TestSignAgreement', async function(accounts) {
         assert.ok(error_caught === true, "Some other driver should not be able to sign and deposit the as car owner!")
 
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 ownerSign({from: driver_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -249,11 +268,11 @@ contract('TestSignAgreement', async function(accounts) {
         // Check double sign & deposit
         // 
         var error_caught = false;
-        var tx = await car1_agreement.
+        var tx = await executor.
                 ownerSign({from: car_owner_uid, value: deposit_in});
         // try to deposit again
         try {
-            var tx = await car1_agreement.
+            var tx = await executor.
                 ownerSign({from: car_owner_uid, value: deposit_in});
         } catch(error) {
             error_caught = true;
@@ -265,16 +284,20 @@ contract('TestSignAgreement', async function(accounts) {
 
     it("Checking ownerSign with exact deposit amount...", async function() {
 
-        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid, tm.address);
+        const car1_agreement = await create_agreement(car1, dec_3_2018_12noon, dec_9_2018_12noon, driver_uid);
+
+        tx = await car1.initiateAgreement(car1_agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
 
         // driver sign
         var driver_deposit_required = await car1_agreement.driver_deposit_required.call();
-        var tx = await car1_agreement.
+        var tx = await executor.
             driverSign({from: driver_uid, value: driver_deposit_required});
 
         var owner_deposit_required = await car1_agreement.owner_deposit_required.call();
         deposit_in = owner_deposit_required;
-        var tx = await car1_agreement.
+        var tx = await executor.
             ownerSign({from: car_owner_uid, value: deposit_in});
 
         assert.equal(tx.logs.length, 3, "ownerSign with exact deposit should only have 3 events!");
@@ -291,10 +314,10 @@ contract('TestSignAgreement', async function(accounts) {
 
         assert.equal(tx.logs[2].event, "AgreementApproved", "No AgreementApproved event emitted!");
         
-        var owner_deposit_amount = await car1_agreement.owner_deposit_amount.call();
+        var owner_deposit_amount = await executor.owner_deposit_amount.call();
         assert.equal(owner_deposit_amount.toString(), deposit_in.toString(), "Owner deposit amount is not right!");
 
-        var car_balance_amount = await car1_agreement.car_balance.call();
+        var car_balance_amount = await executor.car_balance.call();
         assert.equal(car_balance_amount.toString(), "0", "Car balance amount should be 0 after exact deposit!");
 
     });

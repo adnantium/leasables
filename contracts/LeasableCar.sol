@@ -2,6 +2,7 @@ pragma solidity >=0.4.24 <0.6.0;
 
 import "./Leasable.sol";
 import "./LeaseAgreement.sol";
+import "./AgreementExecutor.sol";
 
 // On-chain representation of a specific Car in the real world. Each 
 // car can (should) only have one "avatar" on the chain
@@ -30,8 +31,11 @@ contract LeasableCar is Leasable {
 
     uint public minimum_lease_days = 1;
 
-    event LeaseAgreementCreated(address contractAddress);
-    event LeaseAgreementEnded(address contractAddress);
+    event LeaseAgreementDraftCreated(address contractAddress);
+    // event LeaseAgreementEnded(address contractAddress);
+    event AgreementExecutorCreated(address agreement_executor);
+    event LeaseAgreementInitiated(address lease_agreement);
+
 
     /** @dev Constructor
       * @param _VIN The car unique ID in the real world
@@ -137,13 +141,11 @@ contract LeasableCar is Leasable {
         use as its time source. This for dev/prototyping only! Remove me!!
       * @param _start_timestamp The pickup time
       * @param _end_timestamp The return time
-      * @param _end_timestamp For easy demo & prototyping. REMOVE ME!
       * @return The address of a newly create draft lease agreement
       */
     function requestDraftAgreement (
         uint _start_timestamp,
-        uint _end_timestamp,
-        address _time_machine)
+        uint _end_timestamp)
         public
         only_when_activated("Cannot create any new lease agreements when car is deactivated!")
         returns (LeaseAgreement lease_agreement)
@@ -163,16 +165,55 @@ contract LeasableCar is Leasable {
         require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
 
         LeaseAgreement new_leaseagreement = new LeaseAgreement(
-            car, driver, _start_timestamp, _end_timestamp, daily_rate, _time_machine);
+            car, driver, _start_timestamp, _end_timestamp, daily_rate);
         // lease_agreements.push(new_leaseagreement);
         // NOTE: not adding newly created draft contracts to list yet. Will add 
         // when owner is signing agreement after the driver has signed and 
         // commited a deposit
 
-        emit LeaseAgreementCreated(address(new_leaseagreement));
+        emit LeaseAgreementDraftCreated(address(new_leaseagreement));
 
         return new_leaseagreement;
     }
+
+
+    /** @notice 
+      * @dev 
+      * @param _agreement_address The deal
+      * @param _time_machine For easy demo & prototyping. REMOVE ME!
+      * @return The address of a newly create lease executor
+      */
+    function initiateAgreement (
+        address _agreement_address,
+        address _time_machine)
+        public
+        only_when_activated("Cannot initiate any new lease agreements when car is deactivated!")
+        returns (AgreementExecutor agreement_executor)
+    {
+
+        // address payable driver = msg.sender;
+        // address car_address = address(this) ;
+        // address payable car = address(uint160(car_address));
+
+        LeaseAgreement lease_agreement = LeaseAgreement(_agreement_address);
+
+        // require: agreement belongs to driver
+        // require: agreement is for this car
+        // check (again)
+        // require(check_approved_driver(driver), "Driver is not approved to lease this vehicle");
+        // require(validate_date_format(_start_timestamp), "start date is invalid!");
+        // require(validate_date_format(_end_timestamp), "end date is invalid!");
+        // require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
+
+        AgreementExecutor new_agreement_exec = new AgreementExecutor(
+            _agreement_address, _time_machine);
+
+        emit AgreementExecutorCreated(address(new_agreement_exec));
+        emit LeaseAgreementInitiated(address(lease_agreement));
+
+        return new_agreement_exec;
+    }
+
 
     /** @dev fallback catch all. 
       * @notice Funds earned by the car from the lease agreements coming thru here 

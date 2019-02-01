@@ -19,7 +19,8 @@ This initial implementation is specialized for leasing cars but the underlying c
 
 Key components:
 * `LeasableCar.sol`: The on-chain representation of a car available for lease
-* `LeaseAgreement.sol` An agreement for a limited term contract between a LeasableCar and driver
+* `LeaseAgreement.sol` An agreement for a limited term contract between a LeasableCar and driver. This is a read-only document and meant to be translatable into a traditional legalish paper document that would be admissible in court
+* `AgreementExecutor.sol`: Implements the lifecycle of a LeaseAgreement. It keeps track of the agreement's state (included signatures, deposits, payments received ...), records ongoing changes and it is the access point thru which the driver, car and owners interact with the underlying lease agreement
   
 ## Setup
 

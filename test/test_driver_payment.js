@@ -5,6 +5,7 @@ const web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var AgreementExecutorArtifact = artifacts.require("AgreementExecutor");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
 
 contract('TestDriverPayments', async function(accounts) {
@@ -17,8 +18,8 @@ contract('TestDriverPayments', async function(accounts) {
     var driver_uid = accounts[1];
     var some_other_account = accounts[2]
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
     const acct_gas = {from: car_owner_uid, gas: g, gasPrice: gp};
 
     const one_hour_secs = 60*60;
@@ -56,17 +57,21 @@ contract('TestDriverPayments', async function(accounts) {
                 
         // --------------------------------------------------------------------
         // create a basic agreement
-        let tx = await the_car.requestDraftAgreement(dec_4_2018_12noon, dec_9_2018_12noon, tm.address, {from: driver_uid});
+        let tx = await the_car.requestDraftAgreement(dec_4_2018_12noon, dec_9_2018_12noon, {from: driver_uid});
         var agreement_uid = tx.logs[0].args.contractAddress;
         const agreement = await LeaseAgreementArtifact.at(agreement_uid);     
 
 
+        tx = await the_car.initiateAgreement(agreement.address, tm.address);
+        var executor_uid = tx.logs[0].args.agreement_executor;
+        const executor = await AgreementExecutorArtifact.at(executor_uid);
+
         // --------------------------------------------------------------------
         // driver sign + deposit
         var driver_deposit_required = await agreement.driver_deposit_required.call();
-        tx = await agreement.driverSign({from: driver_uid, value: driver_deposit_required});
+        tx = await executor.driverSign({from: driver_uid, value: driver_deposit_required});
 
-        var contract_balance = await agreement.contract_balance();
+        var contract_balance = await executor.contract_balance();
         assert.equal(
             contract_balance.toString(),
             driver_deposit_required.toString(),
@@ -77,16 +82,16 @@ contract('TestDriverPayments', async function(accounts) {
         // --------------------------------------------------------------------
         // owner sign + deposit
         var owner_deposit_required = await agreement.owner_deposit_required.call();
-        tx = await agreement.ownerSign({from: car_owner_uid, value: owner_deposit_required});
+        tx = await executor.ownerSign({from: car_owner_uid, value: owner_deposit_required});
 
-        var contract_balance = await agreement.contract_balance();
+        var contract_balance = await executor.contract_balance();
         assert.equal(
             contract_balance.toString(),
             driver_deposit_required.add(owner_deposit_required).toString(),
             "Contract balance should be sum(owner_deposit+driver_deposit)!"
         );
 
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert.equal(
             driver_balance_amount.toString(), 
             "0", 
@@ -98,12 +103,12 @@ contract('TestDriverPayments', async function(accounts) {
         // --------------------------------------------------------------------
         // Pay 2 eth
         var payment_amount = web3.utils.toWei(2+'');
-        tx = await agreement.driverPayment({
+        tx = await executor.driverPayment({
             from: driver_uid,
             value: payment_amount,
             gas: g, gasPrice: gp,
         });
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert.equal(tx.logs[0].event, "DriverBalanceUpdated", "DriverBalanceUpdated event not emitted!")
         assert.equal(tx.logs[0].args.new_balance.toString(), web3.utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
         assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should be 2 after a 2eth payment!");
@@ -113,7 +118,7 @@ contract('TestDriverPayments', async function(accounts) {
         var error_caught = false;
         try {
             payment_amount = web3.utils.toWei(2+'');
-            tx = await agreement.driverPayment({
+            tx = await executor.driverPayment({
                 from: car_owner_uid,
                 value: payment_amount,
                 gas: g, gasPrice: gp,

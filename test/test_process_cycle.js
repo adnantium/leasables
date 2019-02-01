@@ -6,6 +6,7 @@ const web3 = require('web3');
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
+var AgreementExecutorArtifact = artifacts.require("AgreementExecutor");
 var TimeMachineArtifact = artifacts.require("TimeMachine");
 
 function assert_approx_wei_equal(wei_str1, wei_str2, message) {
@@ -15,23 +16,27 @@ function assert_approx_wei_equal(wei_str1, wei_str2, message) {
     assert.approximately(parseInt(w1), parseInt(w2), 10, message);
 }
 
-async function create_approved_agreement(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid, time_machine_address) {
+async function create_approved_agreement_executor(the_car, start_timestamp, end_timestamp, car_owner_uid, driver_uid, time_machine_address) {
     var tx = await the_car.
-        requestDraftAgreement(start_timestamp, end_timestamp, time_machine_address,
+        requestDraftAgreement(start_timestamp, end_timestamp,
             {from: driver_uid});
     var agreement_uid = tx.logs[0].args.contractAddress;
     const agreement = await LeaseAgreementArtifact.at(agreement_uid);
 
+    tx = await the_car.initiateAgreement(agreement.address, time_machine_address);
+    var executor_uid = tx.logs[0].args.agreement_executor;
+    const executor = await AgreementExecutorArtifact.at(executor_uid);
+
     var driver_deposit_required = await agreement.driver_deposit_required.call();
-    tx = await agreement.driverSign({from: driver_uid, value: driver_deposit_required});
+    tx = await executor.driverSign({from: driver_uid, value: driver_deposit_required});
 
     var owner_deposit_required = await agreement.owner_deposit_required.call();
-    tx = await agreement.ownerSign({from: car_owner_uid, value: owner_deposit_required});
+    tx = await executor.ownerSign({from: car_owner_uid, value: owner_deposit_required});
 
-    var agreement_state = await agreement.agreement_state.call();
-    assert.equal(agreement_state.toNumber(), 2, "Agreement should be in Approved(2) state!");
+    var executor_state = await executor.agreement_state.call();
+    assert.equal(executor_state.toNumber(), 2, "Agreement executor should be in Approved(2) state!");
 
-    return agreement;
+    return executor;
 }
 
 contract('TestProcessCycle', async function(accounts) {
@@ -44,8 +49,8 @@ contract('TestProcessCycle', async function(accounts) {
     var driver_uid = accounts[1];
     var some_other_account = accounts[2]
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
     const acct_gas = {from: car_owner_uid, gas: g, gasPrice: gp};
 
     var car1_wei_per_sec;
@@ -100,33 +105,33 @@ contract('TestProcessCycle', async function(accounts) {
         let tx;
         let error_caught;
 
-        const agreement = await create_approved_agreement(
+        const executor = await create_approved_agreement_executor(
             the_car, dec_4_2018_12noon, dec_9_2018_12noon, 
             car_owner_uid, driver_uid, tm.address);
 
         // pickup on time
         // Dec 4th 1200pm ------------------------------------------
         tx = await tm.setNow(dec_4_2018_12noon, acct_gas);
-        tx = await agreement.driverPickup({from: driver_uid, value: 0});
+        tx = await executor.driverPickup({from: driver_uid, value: 0});
         assert.equal(tx.logs[0].event, "CarPickedUp", "CarPickedUp event not emitted!")
         assert.equal(tx.logs[1].event, "AgreementStarted", "AgreementStarted event not emitted!")
 
         var payment_amount = web3.utils.toWei(2+'');
-        tx = await agreement.driverPayment({
+        tx = await executor.driverPayment({
             from: driver_uid,
             value: payment_amount,
             gas: g, gasPrice: gp,
         });
         assert.equal(tx.logs[0].event, "DriverBalanceUpdated", "DriverBalanceUpdated event not emitted!")
         assert.equal(tx.logs[0].args.new_balance.toString(), web3.utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should be 2 after 2eth payment!");
 
         // too soon to run cycle - its only been 30mins
         // Dec 4th 1230pm ------------------------------------------
         tx = await tm.setNow(dec_4_2018_1230pm, acct_gas);
         try {
-            tx = await agreement.processCycle({
+            tx = await executor.processCycle({
                 from: car_owner_uid,
                 gas: g, gasPrice: gp,
             });
@@ -134,9 +139,9 @@ contract('TestProcessCycle', async function(accounts) {
             error_caught = true;
         }
         assert.ok(error_caught === true, "Should not be able to run processCycle() early!")
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should still be 2 after after a failed processCycle()!");
-        var car_balance_amount = await agreement.car_balance();
+        var car_balance_amount = await executor.car_balance();
         assert.equal(car_balance_amount.toString(), '0', "Car balance amount should still be 0 after after a failed processCycle()!");
 
 
@@ -144,19 +149,23 @@ contract('TestProcessCycle', async function(accounts) {
         // Exactly 24h since start
         tx = await tm.setNow(dec_5_2018_12noon, acct_gas);
 
+        // 86400 secs
         secs_since_last_cycle = dec_5_2018_12noon - dec_4_2018_12noon;
+        // 500000000000000000 w
         expected_cycle_cost = car1_wei_per_sec * secs_since_last_cycle;
+        // 2eth - 0.5eth = 1500000000000000000 w
         expected_driver_balance = driver_balance_amount - expected_cycle_cost;
-        expected_car_balance = car_balance_amount + expected_cycle_cost;
+        // 0 + 0.5eth =     500000000000000000 w
+        expected_car_balance = BigInt(car_balance_amount) + BigInt(expected_cycle_cost);
 
-        tx = await agreement.processCycle({
+        tx = await executor.processCycle({
             from: car_owner_uid,
             gas: g, gasPrice: gp,
         });
 
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert_approx_wei_equal(driver_balance_amount, expected_driver_balance, "Driver balance after processCycle() is wrong!")
-        var car_balance_amount = await agreement.car_balance();
+        var car_balance_amount = await executor.car_balance();
         assert_approx_wei_equal(car_balance_amount, expected_car_balance, "Car balance after processCycle() is wrong!");
 
 
@@ -169,14 +178,14 @@ contract('TestProcessCycle', async function(accounts) {
         expected_driver_balance = BigInt(driver_balance_amount) - BigInt(expected_cycle_cost);
         expected_car_balance = BigInt(car_balance_amount) + BigInt(expected_cycle_cost);
 
-        tx = await agreement.processCycle({
+        tx = await executor.processCycle({
             from: car_owner_uid,
             gas: g, gasPrice: gp,
         });
 
-        var driver_balance_amount = await agreement.driver_balance();
+        var driver_balance_amount = await executor.driver_balance();
         assert_approx_wei_equal(driver_balance_amount, expected_driver_balance, "Driver balance after processCycle() is wrong!")
-        var car_balance_amount = await agreement.car_balance();
+        var car_balance_amount = await executor.car_balance();
         assert_approx_wei_equal(car_balance_amount, expected_car_balance, "Car balance after processCycle() is wrong!");
 
 
