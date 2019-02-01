@@ -1,6 +1,7 @@
 pragma solidity >=0.4.24 <0.6.0;
 
 import "./LeasableCar.sol";
+import "./AgreementExecutor.sol";
 
 /** @title Lease Agreement
   * @author Adnan (adnan214@github)
@@ -11,6 +12,8 @@ contract LeaseAgreement {
     // The LeasableCar & the driver
     address payable public the_car;
     address payable public the_driver;
+
+    AgreementExecutor public agreement_executor;
 
     // this is usually the car but not neccasarily
     address public contract_creator;
@@ -33,7 +36,7 @@ contract LeaseAgreement {
 
     // modifier driver_only(string memory error_message) { require(msg.sender == the_driver, error_message); _; }
     // modifier owner_only(string memory error_message) { address car_owner = getCarOwner(); require(msg.sender == car_owner, error_message); _; } 
-    // modifier car_only(string memory error_message) { require(msg.sender == the_car, error_message); _; }
+    modifier car_only(string memory error_message) { require(msg.sender == the_car, error_message); _; }
     
     /** @dev Creator
       * @param _car Address of car
@@ -81,6 +84,16 @@ contract LeaseAgreement {
         LeasableCar car_contract = LeasableCar(the_car);
         address car_owner = car_contract.owner();
         return car_owner;
+    }
+
+    /** @dev For convienently getting the UID of the car's onchain owner
+      * @return Address of the owner
+      */
+    function setAgreementExecutor(AgreementExecutor _agreement_executor) 
+        public 
+        car_only("Only the car can set an executor on an agreement")
+    {
+        agreement_executor = _agreement_executor;
     }
 
 

@@ -21,6 +21,7 @@ class AgreementMgmtForm extends React.Component {
     this.state = {
       car_contract_spec: this.props.car_contract_spec,
       lease_agreement_spec: this.props.lease_agreement_spec,
+      agreement_executor_spec: this.props.agreement_executor_spec,
       account: this.props.account,
       time_machine_spec: this.props.time_machine_spec,
       web3: this.props.web3,
@@ -51,60 +52,98 @@ class AgreementMgmtForm extends React.Component {
       lookup_error: null,
       the_car: null,
       lease_agreement: null,
+      agreement_executor: null,
     });
 
     var agreement_address = event.currentTarget.attributes.agreement_id ?
       event.currentTarget.attributes.agreement_id.value :
       this.agreement_address_input.current.value;
 
-    const { lease_agreement_spec } = this.state;
+    const { lease_agreement_spec, agreement_executor_spec } = this.state;
 
     try {
       let lease_agreement = await lease_agreement_spec.at(agreement_address);
       update_known_list('known_agreements', lease_agreement.address);
 
+      var agreement_executor = null;
+      var exec_uid = await lease_agreement.agreement_executor();
+      if (exec_uid !== "0x0000000000000000000000000000000000000000") {
+        agreement_executor = await agreement_executor_spec.at(exec_uid);
+      }
+
       this.setState({ 
         lease_agreement,
         agreement_address: agreement_address,
-      });    
-      this.refreshLeaseAgreementInfo(lease_agreement);
+        agreement_executor,
+      });
+      
+      this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
 
     } catch (error) {
       this.setState({lookup_error: error.message})
     }
   }
 
-  async refreshLeaseAgreementInfo(lease_agreement) {
+  async refreshLeaseAgreementInfo(agreement, executor) {
     try {
-      let lease_start_timestamp = await lease_agreement.start_timestamp();
-      let lease_end_timestamp = await lease_agreement.end_timestamp();
 
-      let agreement_state = await lease_agreement.agreement_state();
-
-      let lease_driver = await lease_agreement.the_driver();
-
-      let driver_deposit_required = await lease_agreement.driver_deposit_required();
-      let driver_deposit_amount = await lease_agreement.driver_deposit_amount();
-      let owner_deposit_required = await lease_agreement.owner_deposit_required();
-      let owner_deposit_amount = await lease_agreement.owner_deposit_amount();
-      let driver_balance = await lease_agreement.driver_balance();
-      let driver_over_balance = await lease_agreement.driver_over_balance();
-      let car_balance = await lease_agreement.car_balance();
-      // let is_started = await lease_agreement.is_started();
-      // let is_ended = await lease_agreement.is_ended();
-      let daily_rate = await lease_agreement.daily_rate();
-      let pickup_time = await lease_agreement.pickup_time();
-      let return_time = await lease_agreement.return_time();
-      let last_cycle_time = await lease_agreement.last_cycle_time();
-      let contract_creator = await lease_agreement.contract_creator();
-
-      let agreement_balance_wei = await this.state.web3.eth.getBalance(lease_agreement.address)
-
-      var car_address = await lease_agreement.the_car();
+      // the car
+      var car_address = await agreement.the_car();
       let the_car = await this.state.car_contract_spec.at(car_address);
-
       let car_vin = await the_car.VIN.call();
       let car_owner = await the_car.owner.call();
+
+      // the agreement
+      let lease_start_timestamp = await agreement.start_timestamp();
+      let lease_end_timestamp = await agreement.end_timestamp();
+      let lease_driver = await agreement.the_driver();
+      let daily_rate = await agreement.daily_rate();
+      let driver_deposit_required = await agreement.driver_deposit_required();
+      let owner_deposit_required = await agreement.owner_deposit_required();
+      let contract_creator = await agreement.contract_creator();
+
+      // the executor
+      if (executor) {
+        let agreement_state = await executor.agreement_state();
+        let driver_deposit_amount = await executor.driver_deposit_amount();
+        let owner_deposit_amount = await executor.owner_deposit_amount();
+        let driver_balance = await executor.driver_balance();
+        let driver_over_balance = await executor.driver_over_balance();
+        let car_balance = await executor.car_balance();
+        // let is_started = await executor.is_started();
+        // let is_ended = await executor.is_ended();
+        let pickup_time = await executor.pickup_time();
+        let return_time = await executor.return_time();
+        let last_cycle_time = await executor.last_cycle_time();
+
+        let agreement_balance_wei = await this.state.web3.eth.getBalance(agreement.address)
+
+        this.setState({ 
+          agreement_state: agreementStateToStr(agreement_state),
+          driver_deposit_amount: weiToEther(driver_deposit_amount),
+          owner_deposit_amount: weiToEther(owner_deposit_amount),
+          driver_balance: weiToEther(driver_balance),
+          driver_over_balance: weiToEther(driver_over_balance),
+          car_balance: weiToEther(car_balance),
+          agreement_balance: weiToEther(agreement_balance_wei),
+          // is_started: ts_to_str(is_started),
+          // is_ended: ts_to_str(is_ended),
+          pickup_time: ts_to_str(pickup_time),
+          return_time: ts_to_str(return_time),
+          last_cycle_time: ts_to_str(last_cycle_time),
+        });
+      } else {
+        this.setState({ 
+          agreement_state: "Draft",
+          driver_deposit_amount: 0,
+          owner_deposit_amount: 0,
+          driver_balance: 0,
+          driver_over_balance: 0,
+          car_balance: 0,
+          agreement_balance: 0,
+        });
+
+      }
 
       this.setState({ 
         the_car,
@@ -112,22 +151,10 @@ class AgreementMgmtForm extends React.Component {
         car_owner,
         lease_start_timestamp: ts_to_str(lease_start_timestamp),
         lease_end_timestamp: ts_to_str(lease_end_timestamp),
-        agreement_state: agreementStateToStr(agreement_state),
         lease_driver,
-        driver_deposit_required: weiToEther(driver_deposit_required),
-        driver_deposit_amount: weiToEther(driver_deposit_amount),
-        owner_deposit_required: weiToEther(owner_deposit_required),
-        owner_deposit_amount: weiToEther(owner_deposit_amount),
-        driver_balance: weiToEther(driver_balance),
-        driver_over_balance: weiToEther(driver_over_balance),
-        car_balance: weiToEther(car_balance),
-        agreement_balance: weiToEther(agreement_balance_wei),
-        // is_started: ts_to_str(is_started),
-        // is_ended: ts_to_str(is_ended),
         daily_rate: weiToEther(daily_rate),
-        pickup_time: ts_to_str(pickup_time),
-        return_time: ts_to_str(return_time),
-        last_cycle_time: ts_to_str(last_cycle_time),
+        driver_deposit_required: weiToEther(driver_deposit_required),
+        owner_deposit_required: weiToEther(owner_deposit_required),
         contract_creator,
       });
     } catch (error) {
@@ -141,35 +168,53 @@ class AgreementMgmtForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement, driver_deposit_required } = this.state;
+    const { account, the_car, lease_agreement, agreement_executor_spec, time_machine, driver_deposit_required } = this.state;
+
+    var agreement_executor;
+    try {
+      var tx = await the_car.initiateAgreement(lease_agreement.address, 
+          time_machine.address,
+          { from: account });
+
+      var executor_uid = tx.logs[0].args.agreement_executor;
+      agreement_executor = await agreement_executor_spec.at(executor_uid);
+      this.setState({agreement_executor});
+
+    } catch (error) {
+      console.log(error)
+      this.setState({
+        action_error: format_error_message(error.message),
+      })
+      return;
+    }
 
     const amt_wei = web3.utils.toWei('' + driver_deposit_required);
     try {
-      const tx = await lease_agreement.driverSign({from: account, value: amt_wei});
+      const tx = await agreement_executor.driverSign({from: account, value: amt_wei});
     } catch (error) {
       console.log(error);
       this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
-    this.refreshLeaseAgreementInfo(lease_agreement);
+    this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
   handleOwnerDepositSubmit = async (event) => {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement, owner_deposit_required } = this.state;
+    const { account, lease_agreement, agreement_executor, owner_deposit_required } = this.state;
 
     const amt_wei = web3.utils.toWei('' + owner_deposit_required);
     try {
-      const tx = await lease_agreement.ownerSign({from: account, value: amt_wei});
+      const tx = await agreement_executor.ownerSign({from: account, value: amt_wei});
     } catch (error) {
       this.setState({ action_error: format_error_message(error.message),})
       return;
     }
 
-    this.refreshLeaseAgreementInfo(lease_agreement);
+    this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
   handleRemoveFromList(event) {
@@ -183,11 +228,11 @@ class AgreementMgmtForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement} = this.state;
+    const { account, lease_agreement, agreement_executor} = this.state;
     
     const amt_wei = web3.utils.toWei('0.1');
     try {
-      const tx = await lease_agreement
+      const tx = await agreement_executor
         .driverPickup({from: account, value: amt_wei});
       console.log(tx);
     } catch (error) {
@@ -197,7 +242,7 @@ class AgreementMgmtForm extends React.Component {
       })
       return;
     }
-    this.refreshLeaseAgreementInfo(lease_agreement);
+    this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
 
@@ -205,18 +250,18 @@ class AgreementMgmtForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement } = this.state;
+    const { account, lease_agreement, agreement_executor } = this.state;
     let amount = event.currentTarget.attributes.amount.value;
     const amt_wei = web3.utils.toWei('' + amount);
     try {
-      const tx = await lease_agreement.driverPayment({from: account, value: amt_wei});
+      const tx = await agreement_executor.driverPayment({from: account, value: amt_wei});
     } catch (error) {
       console.log(error);
       this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
-    this.refreshLeaseAgreementInfo(lease_agreement);
+    this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
 
@@ -224,17 +269,17 @@ class AgreementMgmtForm extends React.Component {
     event.preventDefault();
     this.setState({action_error: null})
 
-    const { account, lease_agreement } = this.state;
+    const { account, lease_agreement, agreement_executor } = this.state;
 
     try {
-      const tx = await lease_agreement.processCycle({from: account});
+      const tx = await agreement_executor.processCycle({from: account});
     } catch (error) {
       console.log(error);
       this.setState({ action_error: format_error_message(error.message), })
       return;
     }
 
-    this.refreshLeaseAgreementInfo(lease_agreement);
+    this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
     // driver return
@@ -242,16 +287,16 @@ class AgreementMgmtForm extends React.Component {
       event.preventDefault();
       this.setState({action_error: null})
   
-      const { account, lease_agreement } = this.state;
+      const { account, lease_agreement, agreement_executor } = this.state;
       
       try {
-        const tx = await lease_agreement.driverReturn({from: account});
+        const tx = await agreement_executor.driverReturn({from: account});
       } catch (error) {
         console.log(error);
         this.setState({ action_error: format_error_message(error.message), })
         return;
       }
-      this.refreshLeaseAgreementInfo(lease_agreement);
+      this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
     }
   
   
@@ -260,16 +305,16 @@ class AgreementMgmtForm extends React.Component {
       event.preventDefault();
       this.setState({action_error: null})
   
-      const { account, lease_agreement } = this.state;
+      const { account, lease_agreement, agreement_executor } = this.state;
       
       try {
-          const tx = await lease_agreement.ownerFinalize({from: account});
+          const tx = await agreement_executor.ownerFinalize({from: account});
       } catch (error) {
           console.log(error);
           this.setState({ action_error: format_error_message(error.message), })
           return;
       }
-      this.refreshLeaseAgreementInfo(lease_agreement);
+      this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
   
   
@@ -278,17 +323,17 @@ class AgreementMgmtForm extends React.Component {
       event.preventDefault();
       this.setState({action_error: null})
 
-      const { account, lease_agreement } = this.state;
+      const { account, lease_agreement, agreement_executor } = this.state;
       
       try {
-          const tx = await lease_agreement.driverFinalize({from: account});
+          const tx = await agreement_executor.driverFinalize({from: account});
           console.log(tx);
       } catch (error) {
           console.log(error);
           this.setState({ action_error: format_error_message(error.message), })
           return;
       }
-      this.refreshLeaseAgreementInfo(lease_agreement);
+      this.refreshLeaseAgreementInfo(lease_agreement, agreement_executor);
   }
 
   agreement_card(is_driver_or_owner) {
@@ -337,23 +382,36 @@ class AgreementMgmtForm extends React.Component {
               <li>Car: {car_address}</li>
               <li>VIN: {this.state.car_vin}</li>
               <li>Driver: {this.state.lease_driver}</li>
+              <li>Owner: {this.state.car_owner}</li>
               <li>You are: {is_driver_or_owner}</li>
             </ul>
             <ul>
-              <li>State: {this.state.agreement_state}</li>
-              <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
-              <li>Daily rate: {this.state.daily_rate} eth</li>
-              <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
-              <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
-              <li>Driver balance: {this.state.driver_balance} eth</li>
-              <li>Driver over balance: {this.state.driver_over_balance} eth</li>
-              <li>Car balance: {this.state.car_balance} eth</li>
-              <li>Contract's balance: {this.state.agreement_balance} eth</li>
-              <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
-              <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
-              <li>Picked up time: {this.state.pickup_time}</li>
-              <li>Returned time: {this.state.return_time}</li>
-              <li>Last cycle run: {this.state.last_cycle_time}</li>
+              <li>Agreement:
+                <ul>
+                  <li>State: {this.state.agreement_state}</li>
+                  <li><b>{this.state.lease_start_timestamp}</b> to <b>{this.state.lease_end_timestamp}</b></li>
+                  <li>Daily rate: {this.state.daily_rate} eth</li>
+                </ul>
+              </li>
+              <li>Balances:
+                <ul>
+                  <li>Driver deposit: {this.state.driver_deposit_amount} eth ({this.state.driver_deposit_required} required)</li>
+                  <li>Owner deposit: {this.state.owner_deposit_amount} eth ({this.state.owner_deposit_required} required)</li>
+                  <li>Driver balance: {this.state.driver_balance} eth</li>
+                  <li>Driver over balance: {this.state.driver_over_balance} eth</li>
+                  <li>Car balance: {this.state.car_balance} eth</li>
+                  <li>Contract's balance: {this.state.agreement_balance} eth</li>
+                </ul>
+              </li>
+              <li>Status:
+                <ul>
+                  <li>Driver access enabled?: {this.state.driver_access_enabled}</li>
+                  <li>Is started: {this.state.is_started} | Is ended: {this.state.is_ended}</li>
+                  <li>Picked up time: {this.state.pickup_time}</li>
+                  <li>Returned time: {this.state.return_time}</li>
+                  <li>Last cycle run: {this.state.last_cycle_time}</li>
+                </ul>
+              </li>
             </ul>
           </div>
           <div className="col-3">
@@ -432,7 +490,7 @@ class AgreementMgmtForm extends React.Component {
         if (agreement_state === "Draft") {
           driver_deposit_disabled = false;
         }
-      } else if (account ===  this.state.car_owner) {
+      } else if (account === this.state.car_owner) {
         is_owner = true;
         is_driver_or_owner = "The Car Owner";
         if (agreement_state === "DriverSigned") {
@@ -440,6 +498,9 @@ class AgreementMgmtForm extends React.Component {
         }
       } else {
         is_driver_or_owner = "Not Owner or Driver!";
+      }
+      if (this.state.car_owner === this.state.lease_driver) {
+        is_driver_or_owner = "WARNING! Car Owner == Driver!";
       }
     }
 

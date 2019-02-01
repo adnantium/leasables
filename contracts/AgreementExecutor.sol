@@ -66,7 +66,7 @@ contract AgreementExecutor {
     uint public last_cycle_time;
 
     // Agreement state transition events
-    event AgreementCreated(address the_car, address the_driver, address lease_agreement);
+    event AgreementInitiated(address the_car, address the_driver, address lease_agreement);
     event DriverSigned(address the_car, address the_driver, uint256 deposit_amount);
     event OwnerSigned(address the_car, address the_driver, uint256 deposit_amount);
     event AgreementApproved(address the_car, address the_driver);
@@ -132,7 +132,7 @@ contract AgreementExecutor {
         // todo: check if exists
         time_machine = TimeMachine(_time_machine);
 
-        emit AgreementCreated(the_car, the_driver, address(lease_agreement));
+        emit AgreementInitiated(the_car, the_driver, address(lease_agreement));
     }
 
     /** @dev Time till the lease agreement's planned start. Based on time_now() from the time machine

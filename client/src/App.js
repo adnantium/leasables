@@ -5,6 +5,7 @@ import "react-tabs/style/react-tabs.css";
 
 import LeasableCarContract from "./contracts/LeasableCar.json";
 import LeaseAgreementContract from "./contracts/LeaseAgreement.json";
+import AgreementExecutorContract from "./contracts/AgreementExecutor.json";
 import TimeMachineContract from "./contracts/TimeMachine.json";
 import getWeb3 from "./utils/getWeb3";
 
@@ -59,6 +60,9 @@ class App extends Component {
       var lease_agreement_spec = truffle_contract(LeaseAgreementContract);
       lease_agreement_spec.setProvider(web3.currentProvider);
 
+      var agreement_executor_spec = truffle_contract(AgreementExecutorContract);
+      agreement_executor_spec.setProvider(web3.currentProvider);
+
       var time_machine_spec = truffle_contract(TimeMachineContract);
       time_machine_spec.setProvider(web3.currentProvider);
 
@@ -76,6 +80,7 @@ class App extends Component {
         account,
         car_contract_spec,
         lease_agreement_spec,
+        agreement_executor_spec,
         time_machine_spec,
         time_machine,
         time_machine_owner,
@@ -137,6 +142,7 @@ class App extends Component {
             <AgreementMgmtForm
               car_contract_spec={this.state.car_contract_spec} 
               lease_agreement_spec={this.state.lease_agreement_spec} 
+              agreement_executor_spec={this.state.agreement_executor_spec}
               time_machine_spec={this.state.time_machine_spec}
               web3={this.state.web3}
               account={this.state.account} />

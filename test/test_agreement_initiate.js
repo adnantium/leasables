@@ -47,6 +47,10 @@ contract('TestAgreementInitiation', async function(accounts) {
         tx = await car1.initiateAgreement(agreement.address, tm.address);
         var executor_uid = tx.logs[0].args.agreement_executor;
         const executor = await AgreementExecutorArtifact.at(executor_uid);
+
+        // check that the agreement is connected to exactly 1 executor
+        var executor_address = await agreement.agreement_executor()
+        assert.equal(executor_address, executor_uid, "Agreement should be connected to an executor once initated!")
     
         var driver_deposit_required = await agreement.driver_deposit_required.call();
         tx = await executor.driverSign({from: driver_uid, value: driver_deposit_required});

@@ -33,7 +33,7 @@ contract LeasableCar is Leasable {
 
     event LeaseAgreementDraftCreated(address contractAddress);
     // event LeaseAgreementEnded(address contractAddress);
-    event AgreementExecutorCreated(address agreement_executor);
+    event AgreementExecutorCreated(address agreement_executor, address lease_agreement);
     event LeaseAgreementInitiated(address lease_agreement);
 
 
@@ -206,9 +206,11 @@ contract LeasableCar is Leasable {
         // require(check_dates_are_available(_start_timestamp, _end_timestamp), "Lease term is not available!");
 
         AgreementExecutor new_agreement_exec = new AgreementExecutor(
-            _agreement_address, _time_machine);
+            address(lease_agreement), _time_machine);
 
-        emit AgreementExecutorCreated(address(new_agreement_exec));
+        lease_agreement.setAgreementExecutor(new_agreement_exec);
+
+        emit AgreementExecutorCreated(address(new_agreement_exec), address(lease_agreement));
         emit LeaseAgreementInitiated(address(lease_agreement));
 
         return new_agreement_exec;
