@@ -14,8 +14,8 @@ contract('TestRequestContract', async function(accounts) {
     var car_owner_uid = accounts[0];
     var acct2_uid = accounts[1];
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
 
     var tm;
     const acct_gas = {from: accounts[0], gas: g, gasPrice: gp};
@@ -56,7 +56,7 @@ contract('TestRequestContract', async function(accounts) {
         var end_timestamp = 1544356799;
 
         var tx = await test_car1.
-            requestDraftAgreement(start_timestamp, end_timestamp, tm.address, {from: acct2_uid});
+            requestDraftAgreement(start_timestamp, end_timestamp, {from: acct2_uid});
         assert.equal(tx.logs.length, 1, "New LeaseAgreement creation should only have 1 event!");
         assert.ok(tx.logs[0].args, "No args in tx!");
         assert.ok(tx.logs[0].args.contractAddress, "No contractAddress in tx!");
@@ -91,7 +91,7 @@ contract('TestRequestContract', async function(accounts) {
         try {
             var tx = await test_car1.
                 requestDraftAgreement(
-                    1543838400, 1544356799, tm.address, 
+                    1543838400, 1544356799, 
                     {from: acct2_uid});
         } catch(error) {
             error_caught = true;

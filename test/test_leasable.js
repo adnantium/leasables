@@ -16,8 +16,8 @@ contract('TestLeasableOwnership', function(accounts) {
     var acct2_uid = accounts[1];
     var acct3_uid = accounts[2];
 
-    var g = 4712388;
-    var gp = 100000000000;
+    var g = 6721975;
+    var gp = 20000000000;
 
     beforeEach(async function() {
         // create leasable1 and hold onto its contract and address for later

@@ -129,7 +129,7 @@ class CarMgmtForm extends React.Component {
     try {
       tx = await the_car.requestDraftAgreement(
         start_timestamp, end_timestamp, 
-        this.state.time_machine.address,
+        // this.state.time_machine.address,
         { from: account });
 
       agreement_address = tx.logs[0].args.contractAddress;

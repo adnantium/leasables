@@ -2,7 +2,11 @@
 var web3 = require("web3");
 
 exports.weiToEther = (weis) => {
+  if (weis) {
     return web3.utils.fromWei(weis.toString());
+  } else {
+    return "NA"
+  }
 }
 
 exports.ts_to_str = (epoch_secs_bignumber) => {
