@@ -127,5 +127,14 @@ Ensure the ports are in sync if you have any connection issues.
 
 `gyp ERR! stack Error: Command failed: /usr/local/bin/python -c import sys; print "%s.%s.%s" % sys.version_info[:3]; ....`
 
-An annoying issue with Python on OSX. It ships with 2.7 and lot of the underlying scripts used by `npm` expect that. Does not work well if you have upgraded to Python 3+
-Quick hack fix: (Temporarily) Put OSX's original python version at the front of $PATH
+An annoying issue with Python on OSX. It ships with 2.7 and lot of the underlying scripts used by `npm` expect that. Does not work well if you have upgraded out of the late-2000s to Python 3+
+Quick hack fix: (Temporarily) Put OSX's original python version at the front of $PATH. Its usually in `/usr/bin` so try:
+```
+$ GOODPATH=$PATH
+$ export PATH=/usr/bin:$PATH
+$ python --version
+Python 2.7.10
+$ export PATH=$GOODPATH
+$ python --version
+Python 3.7.2
+```
