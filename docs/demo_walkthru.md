@@ -23,15 +23,19 @@ You can request a "Draft Lease Agreement" with a start & end date & time. It wil
 <img src="images/created_draft_agreement_0xE9742dbef.png" width="300">
 
 Switch over to the "Lease Agreements" tab to view it. (You'll see the address of the new contract in the recent list)
+
 <img src="images/new_contract_draft.png" width="400">
 
 The details of the agreement are on the left side. The latest known state of the agreement: 
+
 <img src="images/agreement_state.png" width="100">
 
 The driver's available actions based on the state of the agreement:
+
 <img src="images/driver_actions.png" width="100">
 
 The owner's available actions based on the state of the agreement:
+
 <img src="images/owner_actions.png" width="100">
 
 ### Utilities
