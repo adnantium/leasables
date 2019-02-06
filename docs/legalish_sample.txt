@@ -1,0 +1,47 @@
+$ truffle exec scripts/legalish_contract.js 0x7af35603C854188930eFFC1608977E003268aeBC legalish/lease_agreement_template.txt 
+
+
+Rendering LeaseAgreement(0x7af35603C854188930eFFC1608977E003268aeBC) with [legalish/lease_agreement_template.txt]....
+
+
+This Car Rental Agreement is entered into between 0x1A3329F5242efBF0e9593a09453065746c5e57F2 (“Car”) and 0x198e07CA1D1b35c5EBe796eae7F9A71B5635e496 (“Driver”) (collectively the “Parties”) and outlines the respective rights and obligations of the Parties relating to the lease of a car.
+
+1. IDENTIFICATION OF THE VEHICLE
+Owner hereby agrees to lease to  passenger vehicle identified as follows:
+	Make: Audi
+	Model: S4
+	Year: 2019
+	VIN: VIN1231
+	Color: Blue
+
+(hereinafter referred to as “Lease Vehicle”).
+
+2. RENTAL TERM
+The term of this Car Rental Agreement runs from the date and hour of vehicle pickup as indicated just above the signature line at the bottom of this agreement until the return of the vehicle to Owner, and completion of all terms of this agreement by both Parties. The estimated rental term is as follows:
+
+	Estimated start date: Wed Feb 06 2019 13:12:57 GMT-0500 (Eastern Standard Time)
+	Estimated end date: Wed Feb 06 2019 13:12:57 GMT-0500 (Eastern Standard Time)
+
+The Parties may shorten or extend the estimate term of rental by mutual consent.
+
+
+
+
+
+{ the_driver: '0x198e07CA1D1b35c5EBe796eae7F9A71B5635e496',
+  the_car: '0x1A3329F5242efBF0e9593a09453065746c5e57F2',
+  daily_rate: '1000000000000000000',
+  start_timestamp: '1546923600',
+  end_timestamp: '1547182800',
+  driver_deposit_required: '4000000000000000000',
+  owner_deposit_required: '2000000000000000000',
+  agreement_executor: '0x0000000000000000000000000000000000000000',
+  start_time_str: 'Wed Feb 06 2019 13:13:10 GMT-0500 (Eastern Standard Time)',
+  end_time_str: 'Wed Feb 06 2019 13:13:10 GMT-0500 (Eastern Standard Time)',
+  car_owner: '0x65F48968F6364efA0A8d9f06D4Cf66Df1e97D36d',
+  VIN: 'VIN1231',
+  year: '2019',
+  model: 'Audi',
+  manufacturer: 'S4',
+  color: 'Blue' }
+

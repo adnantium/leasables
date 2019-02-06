@@ -21,6 +21,7 @@ Key components:
 * `LeasableCar.sol`: The on-chain representation of a car available for lease
 * `LeaseAgreement.sol` An agreement for a limited term contract between a LeasableCar and driver. This is a read-only document and meant to be translatable into a traditional legalish paper document that would be admissible in court
 * `AgreementExecutor.sol`: Implements the lifecycle of a LeaseAgreement. It keeps track of the agreement's state (included signatures, deposits, payments received ...), records ongoing changes and it is the access point thru which the driver, car and owners interact with the underlying lease agreement
+* `scripts/legalish_contract.js`: A tool to generate a "Legal" paper version of a lease agreement from its "smart contract" digital representation. The generated paper contract (e.g. [legalish_sample.txt](docs/legalish_sample.txt)) can be used off-chain within the existing legal system if (rarely but inevitably) things go wrong with an interaction on-chain.
   
 ## Setup
 

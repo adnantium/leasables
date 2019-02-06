@@ -1,0 +1,19 @@
+This Car Rental Agreement is entered into between {{the_car}} (“Car”) and {{lessee}} (“Leasee”) (collectively the “Parties”) and outlines the respective rights and obligations of the Parties relating to the lease of a car.
+
+1. IDENTIFICATION OF THE VEHICLE
+Owner hereby agrees to lease to {{lessee}} passenger vehicle identified as follows:
+	Make: {{make}}
+	Model: {{model}}
+	Year: {{year}}
+	VIN: {{vin}}
+	Color: {{color}}
+
+(hereinafter referred to as “Lease Vehicle”).
+
+2. RENTAL TERM
+The term of this Car Rental Agreement runs from the date and hour of vehicle pickup as indicated just above the signature line at the bottom of this agreement until the return of the vehicle to Owner, and completion of all terms of this agreement by both Parties. The estimated rental term is as follows:
+
+	Estimated start date: ::[START DATE]::
+	Estimated end date: ::[END DATE]::
+
+The Parties may shorten or extend the estimate term of rental by mutual consent.
