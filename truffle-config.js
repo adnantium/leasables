@@ -45,7 +45,7 @@ module.exports = {
     //
     development: {
      host: "127.0.0.1",     // Localhost (default: none)
-     port: 8545,            // Standard used by ganache-cli. ganche UI will be on 7545!
+     port: 7545,            // Standard used by ganache-cli. ganche UI will be on 7545!
      network_id: "*",       // Any network (default: none)
     //  gas: 6000000,           // Gas sent with each transaction (default: ~6700000)
     //  gasPrice: 2000000000,  // 20 gwei (in wei) (default: 100 gwei)
