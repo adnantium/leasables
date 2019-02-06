@@ -1,0 +1,14 @@
+This Car Rental Agreement is entered into between {{the_car}} (“Car”) and {{lessee}} (“Leasee”) (collectively the “Parties”) and outlines the respective rights and obligations of the Parties relating to the lease of a car.
+
+1. IDENTIFICATION OF THE VEHICLE
+Owner hereby agrees to lease to {{lessee}} passenger vehicle identified as follows:
+	Make: {{manufacturer}}
+	Model: {{model}}
+	Year: {{year}}
+	Color: {{color}}
+	VIN: {{vin}}
+
+2. RENTAL TERM
+	Estimated start date: {{start_time_str}}
+	Estimated end date: {{end_time_str}}
+
