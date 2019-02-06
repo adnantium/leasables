@@ -3,6 +3,7 @@
 var chai = require('chai');
 var assert = chai.assert;
 const web3 = require('web3');
+var web3_utils = require("web3-utils");
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
@@ -75,7 +76,7 @@ contract('TestDriverReturn', async function(accounts) {
 
         let tx;
 
-        var daily_rate = web3.utils.toWei(0.5+'');
+        var daily_rate = web3_utils.toWei(0.5+'');
         the_car = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', daily_rate, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
@@ -101,7 +102,7 @@ contract('TestDriverReturn', async function(accounts) {
         tx = await executor.driverPickup({from: driver_uid, value: 0});
 
         // payment 4eth
-        var payment_amount = web3.utils.toWei(4+'');
+        var payment_amount = web3_utils.toWei(4+'');
         tx = await executor.driverPayment({from: driver_uid, value: payment_amount,
             gas: g, gasPrice: gp,
         });
@@ -137,7 +138,7 @@ contract('TestDriverReturn', async function(accounts) {
         // TODO: check for events
         // AgreementCarReturned, DriverAccessDisabled, 
         // assert.equal(tx.logs[n].event, "XX event not emitted!")
-        // assert.equal(tx.logs[n].args.xxx.toString(), web3.utils.toWei('2'), "XXX(xxx) should be ...!")
+        // assert.equal(tx.logs[n].args.xxx.toString(), web3_utils.toWei('2'), "XXX(xxx) should be ...!")
 
         var agreement_state = await executor.agreement_state.call();
         assert.equal(agreement_state.toNumber(), 4, "Agreement should be in CarReturned(4) state after return!");

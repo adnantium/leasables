@@ -2,6 +2,7 @@
 
 var chai = require('chai');
 var assert = chai.assert;
+var web3_utils = require("web3-utils");
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
@@ -57,7 +58,7 @@ contract('TestAgreementFinalize', async function(accounts) {
 
         let tx;
 
-        var daily_rate = web3.utils.toWei(0.5+'');
+        var daily_rate = web3_utils.toWei(0.5+'');
         the_car = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', daily_rate, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
@@ -103,7 +104,7 @@ contract('TestAgreementFinalize', async function(accounts) {
 
         // payment
         // daily rate is 0.5eth. 5 day lease -> 3eth should be good
-        var payment_amount = web3.utils.toWei(3+'');
+        var payment_amount = web3_utils.toWei(3+'');
         tx = await executor.driverPayment({from: driver_uid, value: payment_amount,
             gas: g, gasPrice: gp,
         });
@@ -159,7 +160,7 @@ contract('TestAgreementFinalize', async function(accounts) {
 
         // payment
         // daily rate is 0.5eth. 5 day lease -> 3eth should be good but only giving 1
-        var payment_amount = web3.utils.toWei(1+'');
+        var payment_amount = web3_utils.toWei(1+'');
         tx = await executor.driverPayment({from: driver_uid, value: payment_amount,
             gas: g, gasPrice: gp,
         });

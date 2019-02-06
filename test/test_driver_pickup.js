@@ -2,6 +2,7 @@
 
 var assert = require('assert');
 const Web3 = require('web3');
+var web3_utils = require("web3-utils");
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
@@ -49,7 +50,8 @@ contract('TestDriverPickup', async function(accounts) {
 
 
     before(async function() {
-        var daily_rate = web3.utils.toWei(1.5+'');
+var web3_utils = require("web3-utils");
+        var daily_rate = web3_utils.toWei(1.5+'');
         car1 = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', daily_rate, 
             {from: car_owner_uid, gas: g, gasPrice: gp}

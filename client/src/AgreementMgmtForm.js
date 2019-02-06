@@ -188,7 +188,7 @@ class AgreementMgmtForm extends React.Component {
       return;
     }
 
-    const amt_wei = web3.utils.toWei('' + driver_deposit_required);
+    const amt_wei = web3_utils.toWei('' + driver_deposit_required);
     try {
       const tx = await agreement_executor.driverSign({from: account, value: amt_wei});
     } catch (error) {
@@ -206,7 +206,7 @@ class AgreementMgmtForm extends React.Component {
 
     const { account, lease_agreement, agreement_executor, owner_deposit_required } = this.state;
 
-    const amt_wei = web3.utils.toWei('' + owner_deposit_required);
+    const amt_wei = web3_utils.toWei('' + owner_deposit_required);
     try {
       const tx = await agreement_executor.ownerSign({from: account, value: amt_wei});
     } catch (error) {
@@ -230,7 +230,7 @@ class AgreementMgmtForm extends React.Component {
 
     const { account, lease_agreement, agreement_executor} = this.state;
     
-    const amt_wei = web3.utils.toWei('0.1');
+    const amt_wei = web3_utils.toWei('0.1');
     try {
       const tx = await agreement_executor
         .driverPickup({from: account, value: amt_wei});
@@ -252,7 +252,7 @@ class AgreementMgmtForm extends React.Component {
 
     const { account, lease_agreement, agreement_executor } = this.state;
     let amount = event.currentTarget.attributes.amount.value;
-    const amt_wei = web3.utils.toWei('' + amount);
+    const amt_wei = web3_utils.toWei('' + amount);
     try {
       const tx = await agreement_executor.driverPayment({from: account, value: amt_wei});
     } catch (error) {

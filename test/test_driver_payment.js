@@ -2,6 +2,7 @@
 
 var assert = require('assert');
 const web3 = require('web3');
+var web3_utils = require("web3-utils");
 
 var LeasableCarArtifact = artifacts.require("LeasableCar");
 var LeaseAgreementArtifact = artifacts.require("LeaseAgreement");
@@ -40,7 +41,7 @@ contract('TestDriverPayments', async function(accounts) {
 
         let tx;
 
-        var daily_rate = web3.utils.toWei(0.5+'');
+        var daily_rate = web3_utils.toWei(0.5+'');
         the_car = await LeasableCarArtifact
             .new('VIN1231', '2019', 'Audi', 'S4', 'Blue', daily_rate, 
             {from: car_owner_uid, gas: g, gasPrice: gp}
@@ -102,7 +103,7 @@ contract('TestDriverPayments', async function(accounts) {
         
         // --------------------------------------------------------------------
         // Pay 2 eth
-        var payment_amount = web3.utils.toWei(2+'');
+        var payment_amount = web3_utils.toWei(2+'');
         tx = await executor.driverPayment({
             from: driver_uid,
             value: payment_amount,
@@ -110,14 +111,14 @@ contract('TestDriverPayments', async function(accounts) {
         });
         var driver_balance_amount = await executor.driver_balance();
         assert.equal(tx.logs[0].event, "DriverBalanceUpdated", "DriverBalanceUpdated event not emitted!")
-        assert.equal(tx.logs[0].args.new_balance.toString(), web3.utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
-        assert.equal(driver_balance_amount.toString(), web3.utils.toWei('2'), "Driver balance amount should be 2 after a 2eth payment!");
+        assert.equal(tx.logs[0].args.new_balance.toString(), web3_utils.toWei('2'), "DriverBalanceUpdated(new_balance) should be 2eth!")
+        assert.equal(driver_balance_amount.toString(), web3_utils.toWei('2'), "Driver balance amount should be 2 after a 2eth payment!");
 
         // --------------------------------------------------------
         // Only the driver should be able to make payments to the agreement
         var error_caught = false;
         try {
-            payment_amount = web3.utils.toWei(2+'');
+            payment_amount = web3_utils.toWei(2+'');
             tx = await executor.driverPayment({
                 from: car_owner_uid,
                 value: payment_amount,
