@@ -10,7 +10,7 @@ The `Leasables` protocol models the relationship between a Lessor and Lessee and
   * Terms of use for the lessee and the lessor's responsibilities
   * Payment rate, frequency and method
 * Available actions:
- * Sign, Deposit, Approve, Pickup & Return, Withdraw & Finalize
+  * Sign, Deposit, Approve, Pickup & Return, Withdraw & Finalize
 * Handling funds:
   * Accepting lessee payments
   * Holding and releasing deposit and security funds in escrow
