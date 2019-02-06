@@ -15,6 +15,10 @@ The `Leasables` protocol models the relationship between a Lessor and Lessee and
   * Holding and releasing deposit and security funds in escrow
   * Distributed funds to the Leasable object's contract balance
 
+
+<img src="docs/images/leasable_flows.png" width="500">
+
+
 This initial implementation is specialized for leasing cars but the underlying concepts apply to any object/asset/resource that can be "rented" for a period of time.
 
 Key components:
@@ -22,7 +26,7 @@ Key components:
 * `LeaseAgreement.sol` An agreement for a limited term contract between a LeasableCar and driver. This is a read-only document and meant to be translatable into a traditional legalish paper document that would be admissible in court
 * `AgreementExecutor.sol`: Implements the lifecycle of a LeaseAgreement. It keeps track of the agreement's state (included signatures, deposits, payments received ...), records ongoing changes and it is the access point thru which the driver, car and owners interact with the underlying lease agreement
 * `scripts/legalish_contract.js`: A tool to generate a "Legal" paper version of a lease agreement from its "smart contract" digital representation. The generated paper contract (e.g. [legalish_sample.txt](docs/legalish_sample.txt)) can be used off-chain within the existing legal system if (rarely but inevitably) things go wrong with an interaction on-chain.
-  
+
 ## Setup
 
 Essential Requirements:
