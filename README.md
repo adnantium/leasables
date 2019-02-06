@@ -5,27 +5,26 @@
 
 The `Leasables` protocol models the relationship between a Lessor and Lessee and facilitates its execution thru the agreement's lifecycle. The contracts capture the essential elements of any lease agreement for any asset or resource:
 
-* The details of the agreement
-  * Start and end times of the lease term
-  * Pickup & return locations and conditions
-  * Key identifying attributes of the object of lease
+* Agreement details:
+  * Start & end times, pickup & return locations and conditions
   * Terms of use for the lessee and the lessor's responsibilities
   * Payment rate, frequency and method
-* The Lessor's & Lessee's available actions at each step such as Sign, Deposit, Pickup & Return
-* Handling of Funds
-  * Accepting payments from the lessee
+* Available actions:
+ * Sign, Deposit, Approve, Pickup & Return, Withdraw & Finalize
+* Handling funds:
+  * Accepting lessee payments
   * Holding and releasing deposit and security funds in escrow
-  * Distributed funds to the Leasable object's contract balance
+  * Distributed funds from the Leasable object's contract balance
 
 <img src="docs/images/leasable_flows.png" width="500">
 
 This initial implementation is specialized for leasing cars but the underlying concepts apply to any object, asset or resource that can be "rented" for a period of time.
 
 Key components:
-* `LeasableCar.sol`: The on-chain representation of a car available for lease
-* `LeaseAgreement.sol` An agreement for a limited term contract between a LeasableCar and driver. This is a read-only document and meant to be translatable into a traditional legalish paper document that would be admissible in court.
-* `AgreementExecutor.sol`: Implements the lifecycle of a LeaseAgreement. It keeps track of the agreement's state (included signatures, deposits, payments received ...), records ongoing changes and it is the access point thru which the driver, car and owners interact with the underlying lease agreement
-* `scripts/legalish_contract.js`: A tool to generate a "Legal" paper version of a lease agreement from its "smart contract" digital representation. The generated paper contract (e.g. [legalish_sample.txt](docs/legalish_sample.txt)) can be used off-chain within the existing legal system if (rarely but inevitably) things go wrong with an interaction on-chain.
+* **[LeasableCar.sol](contracts/LeasableCar.sol)**: The on-chain representation of a car available for lease
+* **[LeaseAgreement.sol](contracts/LeaseAgreement.sol)**: An agreement for a limited term contract between a LeasableCar and driver. This is a read-only document and meant to be translatable into a traditional legalish paper document that would be admissible in court.
+* **[AgreementExecutor.sol](contracts/AgreementExecutor.sol)**: Implements the lifecycle of a LeaseAgreement. It keeps track of the agreement's state (included signatures, deposits, payments received ...), records ongoing changes and it is the access point thru which the driver, car and owners interact with the underlying lease agreement
+* **[scripts/legalish_contract.js](scripts/legalish_contract.js)**: A tool to generate a "Legal" paper version of a lease agreement from its "smart contract" digital representation. The generated paper contract (e.g. [legalish_sample.txt](docs/legalish_sample.txt)) can be used off-chain within the existing legal system if (rarely but inevitably) things go wrong with an interaction on-chain.
 
 ## Setup
 
@@ -39,7 +38,7 @@ Details: [Dev & Demo Environment Setup](docs/dev_env_setup.md)
 
 ### Short term lease agreements executed as smart contracts
 
-**Using Leasables, any two participants in a network can come to an agreement on the terms of a lease that will be initiated, executed and enforced by a set of smart contracts in a trustless environment such as Ethereum.**
+**Using Leasables, any two participants in a decentralized network can come to an agreement on the terms of a lease that can be initiated, executed and enforced by a set of smart contracts in a trustless environment such as Ethereum.**
 
 Each lease agreement's primary representation is a digital smart contract but it can also generate a corresponding traditional version in english (aka legalese) that is legally admissible in court if things go bad with the deal.
 
