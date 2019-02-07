@@ -3,7 +3,11 @@
 
 #### A Smart Contract Protocol for Lease Transactions
 
-The `Leasables` protocol models the relationship between a Lessor and Lessee and facilitates its execution thru the agreement's lifecycle. The contracts capture the essential elements of any lease agreement for any asset or resource:
+The `Leasables` protocol models the relationship between a Lessor and Lessee and facilitates its execution thru the agreement's lifecycle. 
+
+<img src="docs/images/leasable_flows.png" width="500">
+
+The contracts capture the essential elements of any lease agreement for any asset or resource:
 
 * Agreement details:
   * Start & end times, pickup & return locations and conditions
@@ -15,8 +19,6 @@ The `Leasables` protocol models the relationship between a Lessor and Lessee and
   * Accepting lessee payments
   * Holding and releasing deposit and security funds in escrow
   * Distributed funds from the Leasable object's contract balance
-
-<img src="docs/images/leasable_flows.png" width="500">
 
 This initial implementation is specialized for leasing cars but the underlying concepts apply to any object, asset or resource that can be "rented" for a period of time.
 
