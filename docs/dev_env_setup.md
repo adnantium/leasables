@@ -123,7 +123,7 @@ Ports are configured in a variety of places including:
 Ensure the ports are in sync if you have any connection issues.
 
 
-### Python error at setup
+### Python error from `npm install...`
 
 `gyp ERR! stack Error: Command failed: /usr/local/bin/python -c import sys; print "%s.%s.%s" % sys.version_info[:3]; ....`
 
