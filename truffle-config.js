@@ -23,7 +23,12 @@ const fs = require('fs');
 
 const HDWallet = require('truffle-hdwallet-provider');
 const infuraKey = "d6e4870388d745089db09cf18cd1d3ce";
-const mnemonic = fs.readFileSync(".secret").toString().trim();
+try {
+  const mnemonic = fs.readFileSync(".secret").toString().trim();
+} catch (error) {
+  const mnemonic = "NO MNEMONIC!"
+	console.log('*** !! Cant find a .secret file. No HDWallet!! **')  
+}
 
 module.exports = {
   /**
